@@ -29,10 +29,16 @@ export const logout = () => {
 };
 
 export const getTheme = (): 'light' | 'dark' => {
-  return (localStorage.getItem(THEME_KEY) as 'light' | 'dark') || 'light';
+  return (localStorage.getItem(THEME_KEY) as 'light' | 'dark') || 'dark';
 };
 
 export const setTheme = (theme: 'light' | 'dark') => {
   localStorage.setItem(THEME_KEY, theme);
-  document.documentElement.classList.toggle('dark', theme === 'dark');
+  if (theme === 'light') {
+    document.documentElement.classList.add('light');
+    document.documentElement.classList.remove('dark');
+  } else {
+    document.documentElement.classList.remove('light');
+    document.documentElement.classList.add('dark');
+  }
 };

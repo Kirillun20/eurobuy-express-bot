@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { COUNTRIES, CURRENCIES, DELIVERY_METHODS } from '@/lib/types';
-import { Calculator, Package } from 'lucide-react';
+import { Calculator, Package, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const EXCHANGE_RATES: Record<string, number> = {
   EUR: 100, USD: 92, GBP: 116, CHF: 104, PLN: 23, CZK: 4.1, SEK: 8.8,
@@ -43,73 +44,80 @@ const CalculatorPage = () => {
 
   return (
     <div className="px-4 py-6 pb-20 max-w-lg mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl gradient-gold flex items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-3 mb-6"
+      >
+        <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center glow-primary">
           <Calculator size={20} className="text-primary-foreground" />
         </div>
         <div>
           <h1 className="text-xl font-display font-bold">Калькулятор</h1>
           <p className="text-xs text-muted-foreground">Рассчитайте стоимость доставки</p>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="space-y-4"
+      >
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs mb-1.5 block">Стоимость товара</Label>
+            <Label className="text-xs mb-1.5 block text-muted-foreground">Стоимость товара</Label>
             <Input
               type="number"
               placeholder="0.00"
               value={price}
               onChange={e => setPrice(e.target.value)}
+              className="glass border-glow bg-transparent h-11 rounded-xl"
             />
           </div>
           <div>
-            <Label className="text-xs mb-1.5 block">Валюта</Label>
+            <Label className="text-xs mb-1.5 block text-muted-foreground">Валюта</Label>
             <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CURRENCIES.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
+              <SelectTrigger className="glass border-glow bg-transparent h-11 rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent className="glass-strong rounded-xl">
+                {CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <div>
-          <Label className="text-xs mb-1.5 block">Вес (кг)</Label>
+          <Label className="text-xs mb-1.5 block text-muted-foreground">Вес (кг)</Label>
           <Input
             type="number"
             placeholder="0.5"
             value={weight}
             onChange={e => setWeight(e.target.value)}
+            className="glass border-glow bg-transparent h-11 rounded-xl"
           />
         </div>
 
         <div>
-          <Label className="text-xs mb-1.5 block">Страна</Label>
+          <Label className="text-xs mb-1.5 block text-muted-foreground">Страна</Label>
           <Select value={country} onValueChange={setCountry}>
-            <SelectTrigger><SelectValue placeholder="Выберите страну" /></SelectTrigger>
-            <SelectContent>
-              {COUNTRIES.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
+            <SelectTrigger className="glass border-glow bg-transparent h-11 rounded-xl"><SelectValue placeholder="Выберите страну" /></SelectTrigger>
+            <SelectContent className="glass-strong rounded-xl">
+              {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label className="text-xs mb-1.5 block">Способ доставки</Label>
+          <Label className="text-xs mb-1.5 block text-muted-foreground">Способ доставки</Label>
           <div className="space-y-2">
             {DELIVERY_METHODS.map(dm => (
               <button
                 key={dm.id}
                 onClick={() => setDelivery(dm.id)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                className={`w-full flex items-center justify-between p-3.5 rounded-xl transition-all duration-300 ${
                   delivery === dm.id
-                    ? 'border-primary bg-primary/5 shadow-card'
-                    : 'border-border hover:border-primary/30'
+                    ? 'glass border-glow shadow-glow'
+                    : 'glass hover:border-glow'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -119,20 +127,31 @@ const CalculatorPage = () => {
                     <div className="text-[11px] text-muted-foreground">{dm.days}</div>
                   </div>
                 </div>
-                <span className="text-sm font-semibold">от €{dm.price}</span>
+                <span className={`text-sm font-display font-bold ${delivery === dm.id ? 'text-gradient' : 'text-muted-foreground'}`}>
+                  от €{dm.price}
+                </span>
               </button>
             ))}
           </div>
         </div>
 
-        <Button onClick={calculate} className="w-full bg-primary hover:bg-primary/90 font-semibold">
+        <Button
+          onClick={calculate}
+          className="w-full gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 hover:opacity-90 transition-opacity"
+        >
+          <TrendingUp size={18} className="mr-2" />
           Рассчитать стоимость
         </Button>
 
         {result && (
-          <div className="bg-card rounded-2xl p-5 shadow-elevated space-y-3 animate-in fade-in slide-in-from-bottom-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="glass rounded-2xl p-5 border-glow shadow-glow space-y-3"
+          >
             <h3 className="font-display font-bold text-lg">Расчёт стоимости</h3>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {result.breakdown.map(({ item, cost }) => (
                 <div key={item} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{item}</span>
@@ -140,13 +159,13 @@ const CalculatorPage = () => {
                 </div>
               ))}
             </div>
-            <div className="border-t border-border pt-3 flex justify-between">
+            <div className="border-t border-border pt-3 flex justify-between items-center">
               <span className="font-semibold">Итого</span>
-              <span className="text-xl font-display font-bold text-gold">€{result.total}</span>
+              <span className="text-2xl font-display font-bold text-gradient">€{result.total}</span>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };
