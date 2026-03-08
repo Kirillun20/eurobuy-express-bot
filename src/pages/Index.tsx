@@ -73,11 +73,11 @@ const advantages = [
 ];
 
 const chartData = [
-  { name: 'Скорость', value: 95 },
-  { name: 'Надёжность', value: 99 },
-  { name: 'Цена', value: 88 },
-  { name: 'Поддержка', value: 97 },
-  { name: 'Удобство', value: 92 },
+  { name: 'Скорость', value: 95, icon: '⚡', color: 'from-blue-500 to-cyan-400' },
+  { name: 'Надёжность', value: 99, icon: '🛡️', color: 'from-violet-500 to-purple-400' },
+  { name: 'Цена', value: 88, icon: '💰', color: 'from-emerald-500 to-green-400' },
+  { name: 'Поддержка', value: 97, icon: '💬', color: 'from-orange-500 to-amber-400' },
+  { name: 'Удобство', value: 92, icon: '✨', color: 'from-pink-500 to-rose-400' },
 ];
 
 const container = {
