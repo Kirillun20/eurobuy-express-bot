@@ -15,6 +15,10 @@ export const saveOrder = (order: Order) => {
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
 };
 
+export const getOrderByTrack = (trackNumber: string): Order | undefined => {
+  return getOrders().find(o => o.trackNumber.toLowerCase() === trackNumber.toLowerCase());
+};
+
 export const getUser = (): User | null => {
   const data = localStorage.getItem(USER_KEY);
   return data ? JSON.parse(data) : null;
