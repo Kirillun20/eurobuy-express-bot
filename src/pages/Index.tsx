@@ -39,59 +39,59 @@ const Particles = () => {
     left: Math.random() * 100,
     delay: Math.random() * 8,
     duration: Math.random() * 10 + 12,
-    opacity: Math.random() * 0.4 + 0.1,
+    opacity: Math.random() * 0.4 + 0.1
   }));
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map(p => (
-        <div
-          key={p.id}
-          className="particle bg-glow-primary"
-          style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.left}%`,
-            bottom: '-10px',
-            opacity: p.opacity,
-            animationDuration: `${p.duration}s`,
-            animationDelay: `${p.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
+      {particles.map((p) =>
+      <div
+        key={p.id}
+        className="particle bg-glow-primary"
+        style={{
+          width: p.size,
+          height: p.size,
+          left: `${p.left}%`,
+          bottom: '-10px',
+          opacity: p.opacity,
+          animationDuration: `${p.duration}s`,
+          animationDelay: `${p.delay}s`
+        }} />
+
+      )}
+    </div>);
+
 };
 
 const advantages = [
-  { icon: Shield, title: 'Надёжность', desc: 'Гарантия безопасной доставки и страхование', color: 'from-blue-500/20 to-indigo-500/20' },
-  { icon: Truck, title: 'Быстро', desc: 'От 3 дней из любой страны Европы', color: 'from-green-500/20 to-emerald-500/20' },
-  { icon: Globe, title: '15+ стран', desc: 'Германия, Франция, Италия и другие', color: 'from-purple-500/20 to-violet-500/20' },
-  { icon: Clock, title: '24/7', desc: 'Поддержка всегда на связи', color: 'from-orange-500/20 to-amber-500/20' },
-  { icon: Star, title: 'Лучшие цены', desc: 'Без скрытых комиссий', color: 'from-pink-500/20 to-rose-500/20' },
-  { icon: Zap, title: 'Просто', desc: 'Заказ за 2 минуты', color: 'from-cyan-500/20 to-teal-500/20' },
-];
+{ icon: Shield, title: 'Надёжность', desc: 'Гарантия безопасной доставки и страхование', color: 'from-blue-500/20 to-indigo-500/20' },
+{ icon: Truck, title: 'Быстро', desc: 'От 3 дней из любой страны Европы', color: 'from-green-500/20 to-emerald-500/20' },
+{ icon: Globe, title: '15+ стран', desc: 'Германия, Франция, Италия и другие', color: 'from-purple-500/20 to-violet-500/20' },
+{ icon: Clock, title: '24/7', desc: 'Поддержка всегда на связи', color: 'from-orange-500/20 to-amber-500/20' },
+{ icon: Star, title: 'Лучшие цены', desc: 'Без скрытых комиссий', color: 'from-pink-500/20 to-rose-500/20' },
+{ icon: Zap, title: 'Просто', desc: 'Заказ за 2 минуты', color: 'from-cyan-500/20 to-teal-500/20' }];
+
 
 const chartData = [
-  { name: 'Скорость', value: 95, icon: '⚡', color: 'from-blue-500 to-cyan-400' },
-  { name: 'Надёжность', value: 99, icon: '🛡️', color: 'from-violet-500 to-purple-400' },
-  { name: 'Цена', value: 88, icon: '💰', color: 'from-emerald-500 to-green-400' },
-  { name: 'Поддержка', value: 97, icon: '💬', color: 'from-orange-500 to-amber-400' },
-  { name: 'Удобство', value: 92, icon: '✨', color: 'from-pink-500 to-rose-400' },
-];
+{ name: 'Скорость', value: 95, icon: '⚡', color: 'from-blue-500 to-cyan-400' },
+{ name: 'Надёжность', value: 99, icon: '🛡️', color: 'from-violet-500 to-purple-400' },
+{ name: 'Цена', value: 88, icon: '💰', color: 'from-emerald-500 to-green-400' },
+{ name: 'Поддержка', value: 97, icon: '💬', color: 'from-orange-500 to-amber-400' },
+{ name: 'Удобство', value: 92, icon: '✨', color: 'from-pink-500 to-rose-400' }];
+
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
+  show: { transition: { staggerChildren: 0.1 } }
 };
 
 const item = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6 } },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6 } }
 };
 
 // Tilt card component
-const TiltCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+const TiltCard = ({ children, className = '' }: {children: React.ReactNode;className?: string;}) => {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -116,17 +116,17 @@ const TiltCard = ({ children, className = '' }: { children: React.ReactNode; cla
       style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
       onMouseMove={handleMouse}
       onMouseLeave={handleLeave}
-      className={className}
-    >
+      className={className}>
+      
       {children}
-    </motion.div>
-  );
+    </motion.div>);
+
 };
 
 const Index = () => {
   const navigate = useNavigate();
   const [trackInput, setTrackInput] = useState('');
-  const [trackResult, setTrackResult] = useState<null | { found: boolean; status?: string; track?: string }>(null);
+  const [trackResult, setTrackResult] = useState<null | {found: boolean;status?: string;track?: string;}>(null);
 
   const ordersCounter = useCounter(10000, 2500);
   const countriesCounter = useCounter(15, 1500);
@@ -165,13 +165,13 @@ const Index = () => {
           </div>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="relative text-center max-w-lg mx-auto">
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="relative text-center max-w-lg mx-auto py-0 my-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-glow mb-6 overflow-hidden relative"
-          >
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-glow mb-6 overflow-hidden relative">
+            
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
             <Sparkles size={14} className="text-primary relative z-10" />
             <span className="text-xs font-medium text-muted-foreground relative z-10">Премиум сервис доставки</span>
@@ -181,8 +181,8 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-            className="text-4xl sm:text-5xl font-display font-bold mb-4 leading-tight tracking-tight"
-          >
+            className="text-4xl sm:text-5xl font-display font-bold mb-4 leading-tight tracking-tight">
+            
             Доставка из{' '}
             <span className="text-gradient inline-block relative">
               Европы
@@ -191,8 +191,8 @@ const Index = () => {
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 0.8, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-                style={{ originX: 0 }}
-              />
+                style={{ originX: 0 }} />
+              
             </span>
             <br />к вашей двери
           </motion.h1>
@@ -201,17 +201,17 @@ const Index = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto leading-relaxed"
-          >
-            Выкупим и доставим любой товар из Европы. Быстро, надёжно и по лучшим ценам.
+            className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto leading-relaxed">Выкупим и доставим любой товар из Европы в РБ и РФ. Быстро, надёжно и по лучшим ценам. Любые количества и товары
+
+
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex gap-3 justify-center"
-          >
+            className="flex gap-3 justify-center">
+            
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
               <Button onClick={() => navigate('/order')} className="gradient-primary glow-primary text-primary-foreground font-semibold px-6 h-11 rounded-xl border-0 hover:opacity-90 relative overflow-hidden group">
                 <span className="relative z-10 flex items-center">Заказать <ArrowRight size={16} className="ml-1.5 group-hover:translate-x-1 transition-transform" /></span>
@@ -229,19 +229,19 @@ const Index = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.6 }}
-            onViewportEnter={() => { ordersCounter.start(); countriesCounter.start(); ratingCounter.start(); }}
-            className="grid grid-cols-3 gap-3 mt-10"
-          >
+            onViewportEnter={() => {ordersCounter.start();countriesCounter.start();ratingCounter.start();}}
+            className="grid grid-cols-3 gap-3 mt-10">
+            
             {[
-              { count: ordersCounter.count, suffix: '+', label: 'Заказов', format: (n: number) => n >= 1000 ? `${Math.floor(n / 1000)}K` : n },
-              { count: countriesCounter.count, suffix: '+', label: 'Стран', format: (n: number) => n },
-              { count: ratingCounter.count, suffix: '★', label: 'Рейтинг', format: (n: number) => `${(n / 10).toFixed(1)}` },
-            ].map(({ count, suffix, label, format }) => (
-              <TiltCard key={label} className="glass rounded-2xl p-3 text-center shadow-glow cursor-default">
+            { count: ordersCounter.count, suffix: '+', label: 'Заказов', format: (n: number) => n >= 1000 ? `${Math.floor(n / 1000)}K` : n },
+            { count: countriesCounter.count, suffix: '+', label: 'Стран', format: (n: number) => n },
+            { count: ratingCounter.count, suffix: '★', label: 'Рейтинг', format: (n: number) => `${(n / 10).toFixed(1)}` }].
+            map(({ count, suffix, label, format }) =>
+            <TiltCard key={label} className="glass rounded-2xl p-3 text-center shadow-glow cursor-default">
                 <div className="text-xl font-display font-bold text-gradient">{format(count)}{suffix}</div>
                 <div className="text-[10px] text-muted-foreground mt-0.5">{label}</div>
               </TiltCard>
-            ))}
+            )}
           </motion.div>
         </motion.div>
       </section>
@@ -252,15 +252,15 @@ const Index = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="glass rounded-2xl p-5 border-glow shadow-glow relative overflow-hidden"
-        >
+          className="glass rounded-2xl p-5 border-glow shadow-glow relative overflow-hidden">
+          
           <div className="absolute top-0 right-0 w-24 h-24 bg-glow-accent/10 rounded-full blur-[40px] pointer-events-none" />
           <div className="flex items-center gap-3 mb-4 relative">
             <motion.div
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"
-            >
+              className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              
               <Package size={20} className="text-primary" />
             </motion.div>
             <div>
@@ -272,10 +272,10 @@ const Index = () => {
             <Input
               placeholder="EBXXXX123456"
               value={trackInput}
-              onChange={e => setTrackInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && searchTrack()}
-              className="glass border-glow bg-transparent h-11 rounded-xl flex-1"
-            />
+              onChange={(e) => setTrackInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && searchTrack()}
+              className="glass border-glow bg-transparent h-11 rounded-xl flex-1" />
+            
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button onClick={searchTrack} className="gradient-primary glow-primary text-primary-foreground h-11 rounded-xl border-0 px-4">
                 <Search size={18} />
@@ -283,13 +283,13 @@ const Index = () => {
             </motion.div>
           </div>
           <AnimatePresence>
-            {trackResult?.found && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: 'auto' }}
-                exit={{ opacity: 0, y: -10, height: 0 }}
-                className="mt-3 glass rounded-xl p-3 border-glow overflow-hidden"
-              >
+            {trackResult?.found &&
+            <motion.div
+              initial={{ opacity: 0, y: 10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="mt-3 glass rounded-xl p-3 border-glow overflow-hidden">
+              
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-[10px] text-muted-foreground">Трек: {trackResult.track}</p>
@@ -300,7 +300,7 @@ const Index = () => {
                   </Button>
                 </div>
               </motion.div>
-            )}
+            }
           </AnimatePresence>
         </motion.div>
       </section>
@@ -312,16 +312,16 @@ const Index = () => {
           <p className="text-sm text-muted-foreground mb-6">Ваш надёжный партнёр в Европе</p>
         </motion.div>
         <motion.div variants={container} initial="hidden" whileInView="show" viewport={{ once: true }} className="grid grid-cols-2 gap-3">
-          {advantages.map(({ icon: Icon, title, desc, color }, idx) => (
-            <motion.div key={title} variants={item}>
+          {advantages.map(({ icon: Icon, title, desc, color }, idx) =>
+          <motion.div key={title} variants={item}>
               <TiltCard className="glass rounded-2xl p-4 magnetic-card group cursor-default h-full relative overflow-hidden">
                 <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative z-10">
                   <motion.div
-                    whileHover={{ rotate: [0, -10, 10, 0] }}
-                    transition={{ duration: 0.5 }}
-                    className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors duration-300"
-                  >
+                  whileHover={{ rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 0.5 }}
+                  className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors duration-300">
+                  
                     <Icon size={20} className="text-primary" />
                   </motion.div>
                   <h3 className="font-display font-semibold text-sm mb-1">{title}</h3>
@@ -329,7 +329,7 @@ const Index = () => {
                 </div>
               </TiltCard>
             </motion.div>
-          ))}
+          )}
         </motion.div>
       </section>
 
@@ -340,22 +340,22 @@ const Index = () => {
         </motion.div>
         <motion.div variants={container} initial="hidden" whileInView="show" viewport={{ once: true }} className="space-y-3">
           {[
-            { step: '01', title: 'Отправьте ссылку', desc: 'Вставьте ссылку на товар или укажите название' },
-            { step: '02', title: 'Мы выкупаем', desc: 'Наши агенты покупают товар в Европе' },
-            { step: '03', title: 'Доставляем вам', desc: 'Отправляем удобным для вас способом' },
-          ].map(({ step, title, desc }, idx) => (
-            <motion.div
-              key={step}
-              variants={item}
-              whileHover={{ x: 8 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="flex items-start gap-4 glass rounded-2xl p-4 magnetic-card cursor-default relative overflow-hidden group"
-            >
+          { step: '01', title: 'Отправьте ссылку', desc: 'Вставьте ссылку на товар или укажите название' },
+          { step: '02', title: 'Мы выкупаем', desc: 'Наши агенты покупают товар в Европе' },
+          { step: '03', title: 'Доставляем вам', desc: 'Отправляем удобным для вас способом' }].
+          map(({ step, title, desc }, idx) =>
+          <motion.div
+            key={step}
+            variants={item}
+            whileHover={{ x: 8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="flex items-start gap-4 glass rounded-2xl p-4 magnetic-card cursor-default relative overflow-hidden group">
+            
               <div className="absolute left-0 top-0 bottom-0 w-1 gradient-primary scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top rounded-full" />
               <motion.span
-                className="text-3xl font-display font-bold text-gradient"
-                whileHover={{ scale: 1.15 }}
-              >
+              className="text-3xl font-display font-bold text-gradient"
+              whileHover={{ scale: 1.15 }}>
+              
                 {step}
               </motion.span>
               <div>
@@ -363,7 +363,7 @@ const Index = () => {
                 <p className="text-[11px] text-muted-foreground mt-0.5">{desc}</p>
               </div>
             </motion.div>
-          ))}
+          )}
         </motion.div>
       </section>
 
@@ -381,14 +381,14 @@ const Index = () => {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          className="space-y-3"
-        >
-          {chartData.map(({ name, value, icon, color }) => (
-            <motion.div
-              key={name}
-              variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.5 } } }}
-              className="glass rounded-2xl p-4 border-glow group hover:shadow-glow transition-all duration-300"
-            >
+          className="space-y-3">
+          
+          {chartData.map(({ name, value, icon, color }) =>
+          <motion.div
+            key={name}
+            variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.5 } } }}
+            className="glass rounded-2xl p-4 border-glow group hover:shadow-glow transition-all duration-300">
+            
               <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">{icon}</span>
@@ -398,15 +398,15 @@ const Index = () => {
               </div>
               <div className="w-full h-2.5 rounded-full bg-muted/30 overflow-hidden">
                 <motion.div
-                  initial={{ width: 0 }}
-                  whileInView={{ width: `${value}%` }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1.2, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
-                  className={`h-full rounded-full bg-gradient-to-r ${color}`}
-                />
+                initial={{ width: 0 }}
+                whileInView={{ width: `${value}%` }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
+                className={`h-full rounded-full bg-gradient-to-r ${color}`} />
+              
               </div>
             </motion.div>
-          ))}
+          )}
         </motion.div>
       </section>
 
@@ -418,8 +418,8 @@ const Index = () => {
           viewport={{ once: true }}
           whileHover={{ scale: 1.02 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="relative overflow-hidden gradient-primary rounded-3xl p-8 text-center glow-primary cursor-default"
-        >
+          className="relative overflow-hidden gradient-primary rounded-3xl p-8 text-center glow-primary cursor-default">
+          
           <div className="absolute top-0 right-0 w-32 h-32 bg-glow-secondary/30 rounded-full blur-[60px] animate-pulse-glow" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-glow-accent/20 rounded-full blur-[50px] animate-float" />
           <div className="relative">
@@ -427,8 +427,8 @@ const Index = () => {
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-2xl font-display font-bold text-primary-foreground mb-2"
-            >
+              className="text-2xl font-display font-bold text-primary-foreground mb-2">
+              
               Готовы сделать заказ?
             </motion.h2>
             <p className="text-sm text-primary-foreground/70 mb-6">Оформите заявку прямо сейчас</p>
@@ -440,12 +440,12 @@ const Index = () => {
           </div>
         </motion.div>
       </section>
-    </div>
-  );
+    </div>);
+
 };
 
 // Reviews Section Component
-const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
+const ReviewsSection = ({ navigate }: {navigate: NavigateFunction;}) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -466,7 +466,7 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
       name: name.trim(),
       rating,
       text: text.trim(),
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0]
     };
     saveReview(review);
     setReviews(getReviews());
@@ -490,8 +490,8 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
               size="sm"
               onClick={() => setShowForm(!showForm)}
               className="glass border-glow text-foreground hover:bg-primary/5 rounded-xl text-xs h-8 gap-1.5"
-              variant="outline"
-            >
+              variant="outline">
+              
               <MessageSquare size={14} />
               Оставить
             </Button>
@@ -500,33 +500,33 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
       </motion.div>
 
       <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mb-4"
-          >
+        {showForm &&
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="overflow-hidden mb-4">
+          
             <div className="glass rounded-2xl p-4 border-glow space-y-3">
               <Input
-                placeholder="Ваше имя"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="glass border-glow bg-transparent h-10 rounded-xl"
-              />
+              placeholder="Ваше имя"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="glass border-glow bg-transparent h-10 rounded-xl" />
+            
               <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map(s => (
-                  <button key={s} onClick={() => setRating(s)} className="transition-transform hover:scale-110">
+                {[1, 2, 3, 4, 5].map((s) =>
+              <button key={s} onClick={() => setRating(s)} className="transition-transform hover:scale-110">
                     <Star size={20} className={s <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/30'} />
                   </button>
-                ))}
+              )}
               </div>
               <Textarea
-                placeholder="Ваш отзыв..."
-                value={text}
-                onChange={e => setText(e.target.value)}
-                className="glass border-glow bg-transparent rounded-xl min-h-[70px] text-sm"
-              />
+              placeholder="Ваш отзыв..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="glass border-glow bg-transparent rounded-xl min-h-[70px] text-sm" />
+            
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Button onClick={handleSubmit} className="gradient-primary text-primary-foreground w-full h-10 rounded-xl border-0 gap-2">
                   <Send size={14} /> Отправить
@@ -534,7 +534,7 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
               </motion.div>
             </div>
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
       <motion.div
@@ -542,14 +542,14 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
-        className="space-y-3"
-      >
-        {reviews.slice(0, 3).map((r) => (
-          <motion.div
-            key={r.id}
-            variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.4 } } }}
-            className="glass rounded-2xl p-4 border-glow group hover:shadow-glow transition-shadow duration-300"
-          >
+        className="space-y-3">
+        
+        {reviews.slice(0, 3).map((r) =>
+        <motion.div
+          key={r.id}
+          variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.4 } } }}
+          className="glass rounded-2xl p-4 border-glow group hover:shadow-glow transition-shadow duration-300">
+          
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
@@ -558,9 +558,9 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
                 <div>
                   <span className="text-sm font-semibold">{r.name}</span>
                   <div className="flex gap-0.5 mt-0.5">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Star key={i} size={10} className={i < r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/20'} />
-                    ))}
+                    {Array.from({ length: 5 }, (_, i) =>
+                  <Star key={i} size={10} className={i < r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/20'} />
+                  )}
                   </div>
                 </div>
               </div>
@@ -568,24 +568,24 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">{r.text}</p>
           </motion.div>
-        ))}
+        )}
       </motion.div>
 
-      {reviews.length > 3 && (
-        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-4 text-center">
+      {reviews.length > 3 &&
+      <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-4 text-center">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
-              variant="outline"
-              onClick={() => navigate('/reviews')}
-              className="glass border-glow text-foreground hover:bg-primary/5 rounded-xl text-xs h-9 px-6 gap-1.5"
-            >
+            variant="outline"
+            onClick={() => navigate('/reviews')}
+            className="glass border-glow text-foreground hover:bg-primary/5 rounded-xl text-xs h-9 px-6 gap-1.5">
+            
               Все отзывы <ArrowRight size={14} />
             </Button>
           </motion.div>
         </motion.div>
-      )}
-    </section>
-  );
+      }
+    </section>);
+
 };
 
 export default Index;
