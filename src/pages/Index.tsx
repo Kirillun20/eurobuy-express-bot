@@ -367,43 +367,48 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Performance Chart */}
+      {/* Reviews */}
+      <ReviewsSection navigate={navigate} />
+
+      {/* Performance Chart - redesigned */}
       <section className="px-4 py-8 max-w-lg mx-auto">
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
           <h2 className="text-2xl font-display font-bold mb-1">Наши показатели</h2>
-          <p className="text-sm text-muted-foreground mb-6">Оценка клиентов по ключевым параметрам</p>
+          <p className="text-sm text-muted-foreground mb-5">Оценка клиентов по ключевым параметрам</p>
         </motion.div>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1 } } }}
+          initial="hidden"
+          whileInView="show"
           viewport={{ once: true }}
-          className="glass rounded-2xl p-5 border-glow shadow-glow"
+          className="space-y-3"
         >
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
-              <XAxis type="number" domain={[0, 100]} hide />
-              <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                }}
-                formatter={(value: number) => [`${value}%`, 'Оценка']}
-              />
-              <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={20} animationDuration={1500} animationBegin={200}>
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={`hsl(${252 + index * 8}, 85%, ${55 + index * 3}%)`} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {chartData.map(({ name, value, icon, color }) => (
+            <motion.div
+              key={name}
+              variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.5 } } }}
+              className="glass rounded-2xl p-4 border-glow group hover:shadow-glow transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">{icon}</span>
+                  <span className="text-sm font-semibold">{name}</span>
+                </div>
+                <span className="text-sm font-display font-bold text-gradient">{value}%</span>
+              </div>
+              <div className="w-full h-2.5 rounded-full bg-muted/30 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  whileInView={{ width: `${value}%` }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.2, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
+                  className={`h-full rounded-full bg-gradient-to-r ${color}`}
+                />
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
       </section>
-
-      {/* Reviews */}
-      <ReviewsSection />
 
       {/* CTA */}
       <section className="px-4 py-8 max-w-lg mx-auto">
