@@ -183,7 +183,8 @@ const Index = () => {
             transition={{ delay: 0.3, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
             className="text-4xl sm:text-5xl font-display font-bold mb-4 leading-tight tracking-tight"
           >
-            Доставка из{' '}
+            Выкуп и доставка
+            <br />из{' '}
             <span className="text-gradient inline-block relative">
               Европы
               <motion.span
@@ -194,7 +195,17 @@ const Index = () => {
                 style={{ originX: 0 }}
               />
             </span>
-            <br />к вашей двери
+            {' '}в{' '}
+            <span className="text-gradient inline-block relative">
+              Беларусь
+              <motion.span
+                className="absolute -bottom-1 left-0 right-0 h-0.5 gradient-primary rounded-full"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 1.0, duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                style={{ originX: 0 }}
+              />
+            </span>
           </motion.h1>
 
           <motion.p
@@ -203,7 +214,7 @@ const Index = () => {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto leading-relaxed"
           >
-            Выкупим и доставим любой товар из Европы. Быстро, надёжно и по лучшим ценам.
+            Выкупим и доставим любой товар из Европы прямо в РБ. Быстро, надёжно и по лучшим ценам.
           </motion.p>
 
           <motion.div
