@@ -139,3 +139,11 @@ export function generateTrackNumber(): string {
 export function roundBYN(val: number): number {
   return Math.round(val * 100) / 100;
 }
+
+export interface Review {
+  id: string;
+  name: string;
+  rating: number;
+  text: string;
+  date: string;
+}
