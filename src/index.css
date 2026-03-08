@@ -151,6 +151,35 @@
   .animate-pulse-glow {
     animation: pulse-glow 3s ease-in-out infinite;
   }
+  .animate-morph {
+    animation: morph 8s ease-in-out infinite;
+  }
+  .animate-orbit {
+    animation: orbit 20s linear infinite;
+  }
+  .animate-orbit-reverse {
+    animation: orbit 25s linear infinite reverse;
+  }
+  .animate-shimmer {
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  .animate-gradient-x {
+    background-size: 200% 200%;
+    animation: gradient-x 4s ease infinite;
+  }
+  .magnetic-card {
+    transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.3s ease;
+  }
+  .magnetic-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 60px -10px hsl(var(--glow-primary) / 0.3), 0 0 40px -10px hsl(var(--glow-secondary) / 0.2);
+  }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particle-float linear infinite;
+  }
 }
 
 @keyframes float {
@@ -161,4 +190,34 @@
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
+}
+
+@keyframes morph {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50% { border-radius: 50% 60% 30% 60% / 30% 50% 70% 60%; }
+  75% { border-radius: 60% 30% 60% 40% / 70% 50% 40% 60%; }
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.5; transform: translateX(-100%); }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; transform: translateX(100%); }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes particle-float {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) translateX(50px) scale(0); opacity: 0; }
 }
