@@ -1,39 +1,41 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   COUNTRIES, CURRENCIES, DELIVERY_METHODS, PAYMENT_METHODS,
   Order, OrderItem, MAX_WEIGHT_KG, MAX_PRICE_EUR,
-  convertToBYN, convertToEUR, calculateServiceCostBYN, roundBYN, generateTrackNumber,
+  calculateServiceCostBYN, roundBYN, generateTrackNumber,
+  getWeightPriceUSD, EXCHANGE_RATES_TO_BYN,
 } from '@/lib/types';
+import { useExchangeRates } from '@/hooks/use-exchange-rates';
 import { saveOrder, getUser } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   ArrowLeft, ArrowRight, Check, Link as LinkIcon, Package, CreditCard,
-  ShoppingBag, Wallet, Banknote, Plus, Trash2, AlertTriangle, Sparkles, Copy
+  ShoppingBag, Wallet, Banknote, Plus, Trash2, AlertTriangle, Sparkles, Copy,
+  FileText, RefreshCw, Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Step = 'item' | 'confirm_more' | 'delivery' | 'payment' | 'done';
 
 const STEP_ORDER: Step[] = ['item', 'confirm_more', 'delivery', 'payment', 'done'];
-const STEP_LABELS: Record<Step, string> = {
-  item: 'Товар', confirm_more: 'Ещё?', delivery: 'Доставка', payment: 'Оплата', done: 'Готово',
-};
 
 const PAYMENT_ICONS: Record<string, typeof CreditCard> = {
   card: CreditCard, cash: Wallet, transfer: Banknote,
 };
 
 const emptyItem = () => ({
-  link: '', name: '', quantity: '1', weight: '', price: '', currency: 'EUR', country: '',
+  link: '', name: '', quantity: '1', weight: '', price: '', currency: 'EUR', country: '', notes: '',
 });
 
 const OrderPage = () => {
   const navigate = useNavigate();
+  const { rates, loading: ratesLoading, convertToBYN, convertToEUR } = useExchangeRates();
   const [step, setStep] = useState<Step>('item');
   const [currentItem, setCurrentItem] = useState(emptyItem());
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -50,7 +52,14 @@ const OrderPage = () => {
   const priceBYN = convertToBYN(priceNum, currentItem.currency);
   const overWeight = weightNum > MAX_WEIGHT_KG;
   const overPrice = priceEUR > MAX_PRICE_EUR;
-  const serviceCostBYN = calculateServiceCostBYN(priceBYN, weightNum);
+
+  // Use live rates for service cost calculation
+  const serviceCostBYN = (() => {
+    const percentCost = priceBYN * 0.18;
+    const weightCostUSD = getWeightPriceUSD(weightNum);
+    const weightCostBYN = weightCostUSD * rates.USD;
+    return Math.max(percentCost, weightCostBYN);
+  })();
 
   const canAddItem = () => {
     return (currentItem.link || currentItem.name) && currentItem.price && currentItem.country && !overWeight && !overPrice;
@@ -67,6 +76,7 @@ const OrderPage = () => {
       country: currentItem.country,
       priceBYN: roundBYN(priceBYN),
       serviceCostBYN: roundBYN(serviceCostBYN),
+      notes: currentItem.notes || undefined,
     };
     setItems(prev => [...prev, item]);
     setCurrentItem(emptyItem());
@@ -81,6 +91,7 @@ const OrderPage = () => {
   const totalPriceBYN = items.reduce((s, i) => s + i.priceBYN, 0);
   const totalServiceBYN = items.reduce((s, i) => s + i.serviceCostBYN, 0);
   const dm = DELIVERY_METHODS.find(d => d.id === deliveryMethod)!;
+  // Delivery cost is in BYN already in DELIVERY_METHODS
   const deliveryCostBYN = dm?.priceBYN || 0;
   const grandTotal = roundBYN(totalPriceBYN + totalServiceBYN + deliveryCostBYN);
 
@@ -116,7 +127,6 @@ const OrderPage = () => {
   const goBack = () => {
     const idx = STEP_ORDER.indexOf(step);
     if (idx > 0) {
-      // skip confirm_more if going back from delivery and items exist
       if (step === 'delivery' && items.length > 0) setStep('confirm_more');
       else if (step === 'confirm_more') setStep('item');
       else setStep(STEP_ORDER[idx - 1]);
@@ -161,7 +171,28 @@ const OrderPage = () => {
           </div>
 
           <div className="glass rounded-2xl p-5 border-glow text-left mb-6">
-            <h3 className="font-display font-bold mb-3">Сводка заказа</h3>
+            <h3 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
+              <ShoppingBag size={18} className="text-primary" /> Сводка заказа
+            </h3>
+
+            {/* Items list */}
+            <div className="space-y-2 mb-4">
+              {completedOrder.items.map((item, idx) => (
+                <div key={idx} className="glass rounded-xl p-3">
+                  <p className="text-sm font-medium truncate">{item.name || item.link}</p>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>{item.quantity} шт · {item.weight} кг · {item.country}</span>
+                    <span className="font-medium text-foreground">{item.priceBYN} BYN</span>
+                  </div>
+                  {item.notes && (
+                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                      <FileText size={9} /> {item.notes}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Товаров</span>
@@ -181,7 +212,7 @@ const OrderPage = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Доставка</span>
-                <span className="font-medium">{completedOrder.deliveryCostBYN} BYN</span>
+                <span className="font-medium">{completedOrder.deliveryCostBYN > 0 ? `${completedOrder.deliveryCostBYN} BYN` : 'Бесплатно'}</span>
               </div>
               <div className="border-t border-border pt-2 flex justify-between">
                 <span className="font-semibold">Итого (примерно)</span>
@@ -215,15 +246,20 @@ const OrderPage = () => {
 
   return (
     <div className="px-4 py-6 pb-20 max-w-lg mx-auto">
+      {/* Rates indicator */}
+      {ratesLoading && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+          <RefreshCw size={12} className="animate-spin" /> Загрузка курсов валют...
+        </div>
+      )}
+
       {/* Progress */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
         {progressSteps.map((s, i) => (
           <div key={s} className="flex items-center">
             <div className="flex flex-col items-center">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-500 ${
-                i < progressIdx ? 'gradient-primary text-primary-foreground glow-primary'
-                  : i === progressIdx ? 'gradient-primary text-primary-foreground glow-primary'
-                  : 'glass text-muted-foreground'
+                i <= progressIdx ? 'gradient-primary text-primary-foreground glow-primary' : 'glass text-muted-foreground'
               }`}>
                 {i < progressIdx ? <Check size={16} /> : i + 1}
               </div>
@@ -311,13 +347,18 @@ const OrderPage = () => {
                     <span className="font-medium">{roundBYN(priceBYN)} BYN</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">В EUR (для проверки лимита)</span>
+                    <span className="text-muted-foreground">В EUR (лимит проверки)</span>
                     <span className={`font-medium ${overPrice ? 'text-destructive' : ''}`}>{roundBYN(priceEUR)} EUR</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Сервис (примерно)</span>
                     <span className="font-medium">{roundBYN(serviceCostBYN)} BYN</span>
                   </div>
+                  {!ratesLoading && (
+                    <p className="text-[9px] text-muted-foreground/60 flex items-center gap-1 pt-1">
+                      <Info size={8} /> Курс: 1 USD = {roundBYN(rates.USD)} BYN · 1 EUR = {roundBYN(rates.EUR)} BYN
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -329,6 +370,21 @@ const OrderPage = () => {
                     {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Notes / details field */}
+              <div>
+                <Label className="text-xs mb-1.5 block text-muted-foreground">
+                  <FileText size={10} className="inline mr-1" />
+                  Подробности к заказу <span className="text-muted-foreground/50">(необязательно)</span>
+                </Label>
+                <Textarea
+                  placeholder="Размер, цвет, артикул, особые пожелания..."
+                  value={currentItem.notes}
+                  onChange={e => update('notes', e.target.value)}
+                  className="glass border-glow bg-transparent rounded-xl min-h-[70px] text-sm resize-none"
+                  rows={2}
+                />
               </div>
             </div>
           )}
@@ -353,6 +409,11 @@ const OrderPage = () => {
                           {item.quantity} шт · {item.weight} кг · {item.price} {item.currency}
                         </p>
                         <p className="text-[11px] text-muted-foreground">{item.country}</p>
+                        {item.notes && (
+                          <p className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-1">
+                            <FileText size={9} /> {item.notes}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-display font-bold text-gradient">{item.priceBYN} BYN</span>
@@ -443,7 +504,6 @@ const OrderPage = () => {
                   Сводка заказа
                 </h3>
                 
-                {/* Items */}
                 <div className="space-y-3 mb-4">
                   {items.map((item, idx) => (
                     <div key={idx} className="glass rounded-xl p-3">
@@ -452,6 +512,11 @@ const OrderPage = () => {
                         <span>{item.quantity} шт · {item.weight} кг · {item.country}</span>
                         <span className="font-medium text-foreground">{item.priceBYN} BYN</span>
                       </div>
+                      {item.notes && (
+                        <p className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-1">
+                          <FileText size={9} /> {item.notes}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

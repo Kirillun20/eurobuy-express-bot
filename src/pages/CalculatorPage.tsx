@@ -5,13 +5,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   COUNTRIES, CURRENCIES, MAX_WEIGHT_KG, MAX_PRICE_EUR,
-  convertToBYN, convertToEUR, calculateServiceCostBYN, roundBYN, getWeightPriceUSD,
-  EXCHANGE_RATES_TO_BYN, DELIVERY_METHODS,
+  roundBYN, getWeightPriceUSD, DELIVERY_METHODS,
 } from '@/lib/types';
-import { Calculator, TrendingUp, AlertTriangle, Info } from 'lucide-react';
+import { useExchangeRates } from '@/hooks/use-exchange-rates';
+import { Calculator, TrendingUp, AlertTriangle, Info, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const CalculatorPage = () => {
+  const { rates, loading: ratesLoading, convertToBYN, convertToEUR } = useExchangeRates();
   const [weight, setWeight] = useState('');
   const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('EUR');
@@ -32,10 +33,10 @@ const CalculatorPage = () => {
   const calculate = () => {
     if (overWeight || overPrice) return;
 
-    const serviceCost = calculateServiceCostBYN(priceBYN, weightNum);
     const weightCostUSD = getWeightPriceUSD(weightNum);
-    const weightCostBYN = roundBYN(weightCostUSD * EXCHANGE_RATES_TO_BYN['USD']);
+    const weightCostBYN = roundBYN(weightCostUSD * rates.USD);
     const percentCost = roundBYN(priceBYN * 0.18);
+    const serviceCost = Math.max(percentCost, weightCostBYN);
     const dm = DELIVERY_METHODS.find(d => d.id === delivery);
     const deliveryCost = dm?.priceBYN || 0;
     const total = roundBYN(priceBYN + serviceCost + deliveryCost);
@@ -73,6 +74,19 @@ const CalculatorPage = () => {
           <p className="text-xs text-muted-foreground">Рассчитайте примерную стоимость</p>
         </div>
       </motion.div>
+
+      {ratesLoading && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+          <RefreshCw size={12} className="animate-spin" /> Загрузка курсов валют...
+        </div>
+      )}
+
+      {!ratesLoading && (
+        <div className="glass rounded-xl p-2.5 mb-4 border-glow text-[10px] text-muted-foreground flex items-center gap-1.5">
+          <Info size={10} />
+          Курс: 1 USD = {roundBYN(rates.USD)} BYN · 1 EUR = {roundBYN(rates.EUR)} BYN · 1 PLN = {roundBYN(rates.PLN)} BYN
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
