@@ -8,6 +8,7 @@ export interface OrderItem {
   country: string;
   priceBYN: number;
   serviceCostBYN: number;
+  notes?: string;
 }
 
 export interface Order {
