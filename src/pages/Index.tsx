@@ -445,7 +445,7 @@ const Index = () => {
 };
 
 // Reviews Section Component
-const ReviewsSection = () => {
+const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
