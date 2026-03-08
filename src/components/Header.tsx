@@ -17,7 +17,7 @@ const Header = () => {
         <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
           <img src={logoImg} alt="EuroBuy" className="w-9 h-9 rounded-xl object-cover" />
           <div>
-            <span className="font-display text-base tracking-tight" style={{ fontWeight: 900 }}>EuroBuy</span>
+            <span className="font-display text-base" style={{ fontWeight: 900, letterSpacing: '0.01em' }}>EuroBuy</span>
           </div>
         </button>
         <div className="flex items-center gap-2">
