@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Shield, Truck, Clock, Globe, Star, Zap, Sparkles, Search, Package, MessageSquare, Send } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, type NavigateFunction } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,7 +8,7 @@ import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from
 import { getOrderByTrack, getReviews, saveReview } from '@/lib/store';
 import { ORDER_STATUS_LABELS, Review } from '@/lib/types';
 import { toast } from 'sonner';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
 
 // Animated counter hook
 const useCounter = (end: number, duration = 2000) => {
@@ -73,11 +73,11 @@ const advantages = [
 ];
 
 const chartData = [
-  { name: 'Скорость', value: 95 },
-  { name: 'Надёжность', value: 99 },
-  { name: 'Цена', value: 88 },
-  { name: 'Поддержка', value: 97 },
-  { name: 'Удобство', value: 92 },
+  { name: 'Скорость', value: 95, icon: '⚡', color: 'from-blue-500 to-cyan-400' },
+  { name: 'Надёжность', value: 99, icon: '🛡️', color: 'from-violet-500 to-purple-400' },
+  { name: 'Цена', value: 88, icon: '💰', color: 'from-emerald-500 to-green-400' },
+  { name: 'Поддержка', value: 97, icon: '💬', color: 'from-orange-500 to-amber-400' },
+  { name: 'Удобство', value: 92, icon: '✨', color: 'from-pink-500 to-rose-400' },
 ];
 
 const container = {
@@ -367,43 +367,48 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Performance Chart */}
+      {/* Reviews */}
+      <ReviewsSection navigate={navigate} />
+
+      {/* Performance Chart - redesigned */}
       <section className="px-4 py-8 max-w-lg mx-auto">
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
           <h2 className="text-2xl font-display font-bold mb-1">Наши показатели</h2>
-          <p className="text-sm text-muted-foreground mb-6">Оценка клиентов по ключевым параметрам</p>
+          <p className="text-sm text-muted-foreground mb-5">Оценка клиентов по ключевым параметрам</p>
         </motion.div>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1 } } }}
+          initial="hidden"
+          whileInView="show"
           viewport={{ once: true }}
-          className="glass rounded-2xl p-5 border-glow shadow-glow"
+          className="space-y-3"
         >
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
-              <XAxis type="number" domain={[0, 100]} hide />
-              <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                }}
-                formatter={(value: number) => [`${value}%`, 'Оценка']}
-              />
-              <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={20} animationDuration={1500} animationBegin={200}>
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={`hsl(${252 + index * 8}, 85%, ${55 + index * 3}%)`} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {chartData.map(({ name, value, icon, color }) => (
+            <motion.div
+              key={name}
+              variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.5 } } }}
+              className="glass rounded-2xl p-4 border-glow group hover:shadow-glow transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">{icon}</span>
+                  <span className="text-sm font-semibold">{name}</span>
+                </div>
+                <span className="text-sm font-display font-bold text-gradient">{value}%</span>
+              </div>
+              <div className="w-full h-2.5 rounded-full bg-muted/30 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  whileInView={{ width: `${value}%` }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.2, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
+                  className={`h-full rounded-full bg-gradient-to-r ${color}`}
+                />
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
       </section>
-
-      {/* Reviews */}
-      <ReviewsSection />
 
       {/* CTA */}
       <section className="px-4 py-8 max-w-lg mx-auto">
@@ -440,7 +445,7 @@ const Index = () => {
 };
 
 // Reviews Section Component
-const ReviewsSection = () => {
+const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -539,7 +544,7 @@ const ReviewsSection = () => {
         viewport={{ once: true }}
         className="space-y-3"
       >
-        {reviews.slice(0, 5).map((r) => (
+        {reviews.slice(0, 3).map((r) => (
           <motion.div
             key={r.id}
             variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.4 } } }}
@@ -565,6 +570,20 @@ const ReviewsSection = () => {
           </motion.div>
         ))}
       </motion.div>
+
+      {reviews.length > 3 && (
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-4 text-center">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/reviews')}
+              className="glass border-glow text-foreground hover:bg-primary/5 rounded-xl text-xs h-9 px-6 gap-1.5"
+            >
+              Все отзывы <ArrowRight size={14} />
+            </Button>
+          </motion.div>
+        </motion.div>
+      )}
     </section>
   );
 };
