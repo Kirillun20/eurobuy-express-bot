@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import CalculatorPage from "./pages/CalculatorPage";
 import OrderPage from "./pages/OrderPage";
 import ProfilePage from "./pages/ProfilePage";
+import AboutPage from "./pages/AboutPage";
 import NotFound from "./pages/NotFound";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
