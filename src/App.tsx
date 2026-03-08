@@ -11,6 +11,7 @@ import OrderPage from "./pages/OrderPage";
 import ProfilePage from "./pages/ProfilePage";
 import AboutPage from "./pages/AboutPage";
 import ReviewsPage from "./pages/ReviewsPage";
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -33,6 +34,7 @@ const AppContent = () => {
           <Route path="/calculator" element={<CalculatorPage />} />
           <Route path="/order" element={<OrderPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
