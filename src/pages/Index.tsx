@@ -544,7 +544,7 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
         viewport={{ once: true }}
         className="space-y-3"
       >
-        {reviews.slice(0, 5).map((r) => (
+        {reviews.slice(0, 3).map((r) => (
           <motion.div
             key={r.id}
             variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0, transition: { duration: 0.4 } } }}
@@ -570,6 +570,20 @@ const ReviewsSection = ({ navigate }: { navigate: NavigateFunction }) => {
           </motion.div>
         ))}
       </motion.div>
+
+      {reviews.length > 3 && (
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-4 text-center">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/reviews')}
+              className="glass border-glow text-foreground hover:bg-primary/5 rounded-xl text-xs h-9 px-6 gap-1.5"
+            >
+              Все отзывы <ArrowRight size={14} />
+            </Button>
+          </motion.div>
+        </motion.div>
+      )}
     </section>
   );
 };
