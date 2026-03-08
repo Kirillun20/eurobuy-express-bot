@@ -183,7 +183,7 @@ const Index = () => {
             transition={{ delay: 0.3, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
             className="text-4xl sm:text-5xl font-display font-bold mb-4 leading-tight tracking-tight">
             
-            Доставка из{' '}
+            Доставка и выкуп товаров из{' '}
             <span className="text-gradient inline-block relative">
               Европы
               <motion.span
@@ -194,7 +194,6 @@ const Index = () => {
                 style={{ originX: 0 }} />
               
             </span>
-            <br />к вашей двери
           </motion.h1>
 
           <motion.p
