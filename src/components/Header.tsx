@@ -17,7 +17,7 @@ const Header = () => {
         <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
           <img src={logoImg} alt="EuroBuy" className="w-9 h-9 rounded-xl object-cover" />
           <div>
-            <span className="font-display font-bold text-base tracking-tight">EuroBuy</span>
+            <span className="font-display font-extrabold text-base tracking-tight">EuroBuy</span>
           </div>
         </button>
         <div className="flex items-center gap-2">
