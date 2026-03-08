@@ -145,47 +145,6 @@ const Index = () => {
 
   return (
     <div className="pb-20 overflow-hidden">
-      {/* Info Banner */}
-      <section className="relative px-4 pt-6 pb-4 max-w-lg mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="glass rounded-2xl p-5 border-glow shadow-glow relative overflow-hidden group"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-glow-primary/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10">
-            <div className="flex items-start gap-3 mb-3">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="flex-shrink-0"
-              >
-                <Truck className="w-6 h-6 text-primary" />
-              </motion.div>
-              <div>
-                <h2 className="text-lg font-display font-bold bg-gradient-to-r from-primary via-glow-primary to-glow-secondary bg-clip-text text-transparent">
-                  Выкуп и доставка из Европы
-                </h2>
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                  Доставим любой товар из Европы прямо в <span className="text-primary font-semibold">Беларусь</span> и <span className="text-primary font-semibold">РБ</span>. Быстро, безопасно, по лучшим ценам.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <div className="rounded-lg bg-primary/5 p-2.5 text-center">
-                <div className="text-xs font-display font-bold text-primary">3-5 дней</div>
-                <div className="text-[10px] text-muted-foreground">доставка</div>
-              </div>
-              <div className="rounded-lg bg-primary/5 p-2.5 text-center">
-                <div className="text-xs font-display font-bold text-primary">100%</div>
-                <div className="text-[10px] text-muted-foreground">защита</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
       {/* Hero */}
       <section className="relative min-h-[70vh] flex items-center justify-center px-4 py-16">
         <div className="absolute inset-0 gradient-mesh pointer-events-none" />
