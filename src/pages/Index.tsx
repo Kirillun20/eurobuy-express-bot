@@ -8,7 +8,7 @@ import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from
 import { getOrderByTrack, getReviews, saveReview } from '@/lib/store';
 import { ORDER_STATUS_LABELS, Review } from '@/lib/types';
 import { toast } from 'sonner';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
 
 // Animated counter hook
 const useCounter = (end: number, duration = 2000) => {
