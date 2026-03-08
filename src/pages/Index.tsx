@@ -568,3 +568,5 @@ const ReviewsSection = () => {
     </section>
   );
 };
+
+export default Index;
