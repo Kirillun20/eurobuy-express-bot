@@ -1,4 +1,4 @@
-import { Order, User } from './types';
+import { Order, User, Review } from './types';
 
 const ORDERS_KEY = 'eurobuy_orders';
 const USER_KEY = 'eurobuy_user';
