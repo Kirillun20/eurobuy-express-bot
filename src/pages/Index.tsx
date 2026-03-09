@@ -570,19 +570,17 @@ const ReviewsSection = ({ navigate }: {navigate: NavigateFunction;}) => {
         )}
       </motion.div>
 
-      {reviews.length > 3 &&
-      <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-4 text-center">
+      <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="mt-5 text-center">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
-            variant="outline"
             onClick={() => navigate('/reviews')}
-            className="glass border-glow text-foreground hover:bg-primary/5 rounded-xl text-xs h-9 px-6 gap-1.5">
-            
-              Все отзывы <ArrowRight size={14} />
+            className="gradient-primary glow-primary text-primary-foreground rounded-xl text-sm h-11 px-8 gap-2 font-semibold border-0 hover:opacity-90">
+              <Star size={16} />
+              Посмотреть все отзывы
+              <ArrowRight size={16} />
             </Button>
           </motion.div>
         </motion.div>
-      }
     </section>);
 
 };
