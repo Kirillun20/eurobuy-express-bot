@@ -15,6 +15,10 @@ export const saveOrder = (order: Order) => {
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
 };
 
+export const updateOrders = (orders: Order[]) => {
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+};
+
 export const getOrderByTrack = (trackNumber: string): Order | undefined => {
   return getOrders().find(o => o.trackNumber.toLowerCase() === trackNumber.toLowerCase());
 };
@@ -68,4 +72,23 @@ export const saveReview = (review: Review) => {
   const reviews = getReviews();
   reviews.unshift(review);
   localStorage.setItem(REVIEWS_KEY, JSON.stringify(reviews));
+};
+
+// EuroPoints helpers
+export const addEuroPoints = (userId: string, points: number) => {
+  const user = getUser();
+  if (user && user.id === userId) {
+    user.euroPoints = (user.euroPoints || 0) + points;
+    saveUser(user);
+  }
+};
+
+export const spendEuroPoints = (userId: string, points: number): boolean => {
+  const user = getUser();
+  if (user && user.id === userId && (user.euroPoints || 0) >= points) {
+    user.euroPoints = (user.euroPoints || 0) - points;
+    saveUser(user);
+    return true;
+  }
+  return false;
 };

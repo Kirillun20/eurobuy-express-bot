@@ -25,6 +25,8 @@ export interface Order {
   createdAt: string;
   estimatedDelivery?: string;
   statusHistory: StatusUpdate[];
+  pointsEarned?: number;
+  discountApplied?: number;
 }
 
 export interface StatusUpdate {
@@ -40,6 +42,7 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  euroPoints?: number;
 }
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -51,11 +54,20 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   delivered: 'Доставлен',
 };
 
+export const ORDER_STATUS_DESCRIPTIONS: Record<OrderStatus, string> = {
+  pending: 'Ваш заказ принят и ожидает подтверждения менеджером',
+  confirmed: 'Менеджер подтвердил заказ, начинаем выкуп товара',
+  purchased: 'Товар успешно выкуплен и готовится к отправке',
+  shipped: 'Посылка отправлена и находится в пути к вам',
+  customs: 'Посылка проходит таможенное оформление',
+  delivered: 'Заказ доставлен! Спасибо за покупку',
+};
+
 export const ALL_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'purchased', 'shipped', 'customs', 'delivered'];
 
 export const COUNTRIES = [
-  'Германия', 'Франция', 'Италия', 'Испания', 'Великобритания',
-  'Нидерланды', 'Бельгия', 'Австрия', 'Польша', 'Чехия',
+  'Польша', 'Германия', 'Франция', 'Италия', 'Испания', 'Великобритания',
+  'Нидерланды', 'Бельгия', 'Австрия', 'Чехия',
   'Португалия', 'Швеция', 'Финляндия', 'Дания', 'Швейцария',
 ];
 
@@ -84,7 +96,7 @@ export const DELIVERY_METHODS = [
   { id: 'pickup_minsk', name: 'Самовывоз (Минск)', desc: 'После получения', priceBYN: 0 },
   { id: 'pickup_moscow', name: 'Самовывоз (Москва)', desc: 'После получения', priceBYN: 0 },
   { id: 'sdek', name: 'СДЭК', desc: '3-7 дней', priceBYN: 15 },
-  { id: 'europost', name: 'Европочта', desc: '5-10 дней', priceBYN: 12 },
+  { id: 'europost', name: 'Европочта', desc: '5-10 дней', priceBYN: 10 },
 ];
 
 export const PAYMENT_METHODS = [
@@ -146,4 +158,27 @@ export interface Review {
   rating: number;
   text: string;
   date: string;
+}
+
+// EuroPoints system
+export interface EuroPointsReward {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  type: 'delivery_discount' | 'percent_discount';
+  value: number; // BYN for delivery, percent for discount
+}
+
+export const EUROPOINTS_REWARDS: EuroPointsReward[] = [
+  { id: 'delivery_10', name: 'Скидка на доставку 10 BYN', description: 'Полная скидка на доставку курьером', cost: 1, type: 'delivery_discount', value: 10 },
+  { id: 'discount_2', name: 'Скидка 2%', description: 'На стоимость товаров', cost: 2, type: 'percent_discount', value: 2 },
+  { id: 'discount_3', name: 'Скидка 3%', description: 'На стоимость товаров', cost: 3, type: 'percent_discount', value: 3 },
+  { id: 'discount_5', name: 'Скидка 5%', description: 'На стоимость товаров', cost: 5, type: 'percent_discount', value: 5 },
+  { id: 'discount_10', name: 'Скидка 10%', description: 'На стоимость товаров', cost: 10, type: 'percent_discount', value: 10 },
+];
+
+// Points earned per order: 1 point per 50 BYN spent
+export function calculatePointsEarned(totalBYN: number): number {
+  return Math.floor(totalBYN / 50);
 }
