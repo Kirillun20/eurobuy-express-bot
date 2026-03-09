@@ -8,22 +8,22 @@ import {
   COUNTRIES, CURRENCIES, DELIVERY_METHODS, PAYMENT_METHODS,
   Order, OrderItem, MAX_WEIGHT_KG, MAX_PRICE_EUR,
   calculateServiceCostBYN, roundBYN, generateTrackNumber,
-  getWeightPriceUSD, EXCHANGE_RATES_TO_BYN,
+  getWeightPriceUSD, EXCHANGE_RATES_TO_BYN, calculatePointsEarned, User,
 } from '@/lib/types';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import { saveOrder, getUser } from '@/lib/store';
+import { saveOrder, getUser, saveUser, addEuroPoints } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   ArrowLeft, ArrowRight, Check, Link as LinkIcon, Package, CreditCard,
   ShoppingBag, Wallet, Banknote, Plus, Trash2, AlertTriangle, Sparkles, Copy,
-  FileText, RefreshCw, Info
+  FileText, RefreshCw, Info, Coins, User as UserIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type Step = 'item' | 'confirm_more' | 'delivery' | 'payment' | 'done';
+type Step = 'item' | 'confirm_more' | 'delivery' | 'payment' | 'register' | 'done';
 
-const STEP_ORDER: Step[] = ['item', 'confirm_more', 'delivery', 'payment', 'done'];
+const STEP_ORDER: Step[] = ['item', 'confirm_more', 'delivery', 'payment', 'register', 'done'];
 
 const PAYMENT_ICONS: Record<string, typeof CreditCard> = {
   card: CreditCard, cash: Wallet, transfer: Banknote,
@@ -42,6 +42,7 @@ const OrderPage = () => {
   const [deliveryMethod, setDeliveryMethod] = useState('courier_minsk');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
+  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '' });
 
   const update = (key: string, value: string) => setCurrentItem(prev => ({ ...prev, [key]: value }));
   const user = getUser();
@@ -53,7 +54,6 @@ const OrderPage = () => {
   const overWeight = weightNum > MAX_WEIGHT_KG;
   const overPrice = priceEUR > MAX_PRICE_EUR;
 
-  // Use live rates for service cost calculation
   const serviceCostBYN = (() => {
     const percentCost = priceBYN * 0.18;
     const weightCostUSD = getWeightPriceUSD(weightNum);
@@ -91,17 +91,37 @@ const OrderPage = () => {
   const totalPriceBYN = items.reduce((s, i) => s + i.priceBYN, 0);
   const totalServiceBYN = items.reduce((s, i) => s + i.serviceCostBYN, 0);
   const dm = DELIVERY_METHODS.find(d => d.id === deliveryMethod)!;
-  // Delivery cost is in BYN already in DELIVERY_METHODS
   const deliveryCostBYN = dm?.priceBYN || 0;
   const grandTotal = roundBYN(totalPriceBYN + totalServiceBYN + deliveryCostBYN);
 
-  const submit = () => {
-    if (!user) {
-      toast.error('Войдите в аккаунт для оформления заказа');
-      navigate('/profile');
+  const handleRegister = () => {
+    if (!regForm.name.trim() || !regForm.email.trim() || !regForm.phone.trim()) {
+      toast.error('Заполните все поля');
       return;
     }
+    const newUser: User = {
+      id: Date.now().toString(36),
+      name: regForm.name.trim(),
+      email: regForm.email.trim(),
+      phone: regForm.phone.trim(),
+      euroPoints: 0,
+    };
+    saveUser(newUser);
+    toast.success('Регистрация успешна!');
+    finalizeOrder(newUser);
+  };
 
+  const submit = () => {
+    const currentUser = getUser();
+    if (!currentUser) {
+      setStep('register');
+      return;
+    }
+    finalizeOrder(currentUser);
+  };
+
+  const finalizeOrder = (orderUser: User) => {
+    const pointsEarned = calculatePointsEarned(grandTotal);
     const order: Order = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       trackNumber: generateTrackNumber(),
@@ -116,9 +136,13 @@ const OrderPage = () => {
       createdAt: new Date().toISOString(),
       estimatedDelivery: new Date(Date.now() + 14 * 86400000).toISOString(),
       statusHistory: [{ status: 'pending', date: new Date().toISOString(), comment: 'Заказ создан' }],
+      pointsEarned,
     };
 
     saveOrder(order);
+    if (pointsEarned > 0) {
+      addEuroPoints(orderUser.id, pointsEarned);
+    }
     setCompletedOrder(order);
     setStep('done');
     toast.success('Заказ успешно оформлен!');
@@ -127,7 +151,8 @@ const OrderPage = () => {
   const goBack = () => {
     const idx = STEP_ORDER.indexOf(step);
     if (idx > 0) {
-      if (step === 'delivery' && items.length > 0) setStep('confirm_more');
+      if (step === 'register') setStep('payment');
+      else if (step === 'delivery' && items.length > 0) setStep('confirm_more');
       else if (step === 'confirm_more') setStep('item');
       else setStep(STEP_ORDER[idx - 1]);
     }
@@ -170,12 +195,27 @@ const OrderPage = () => {
             </div>
           </div>
 
+          {/* Points earned */}
+          {completedOrder.pointsEarned && completedOrder.pointsEarned > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="glass rounded-2xl p-4 border-glow mb-6"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Coins size={20} className="text-yellow-400" />
+                <span className="text-sm font-display font-bold text-yellow-400">+{completedOrder.pointsEarned} ЕвроБалл(ов)</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Начислено на ваш счёт</p>
+            </motion.div>
+          )}
+
           <div className="glass rounded-2xl p-5 border-glow text-left mb-6">
             <h3 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
               <ShoppingBag size={18} className="text-primary" /> Сводка заказа
             </h3>
 
-            {/* Items list */}
             <div className="space-y-2 mb-4">
               {completedOrder.items.map((item, idx) => (
                 <div key={idx} className="glass rounded-xl p-3">
@@ -246,7 +286,6 @@ const OrderPage = () => {
 
   return (
     <div className="px-4 py-6 pb-20 max-w-lg mx-auto">
-      {/* Rates indicator */}
       {ratesLoading && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
           <RefreshCw size={12} className="animate-spin" /> Загрузка курсов валют...
@@ -254,23 +293,25 @@ const OrderPage = () => {
       )}
 
       {/* Progress */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
-        {progressSteps.map((s, i) => (
-          <div key={s} className="flex items-center">
-            <div className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-500 ${
-                i <= progressIdx ? 'gradient-primary text-primary-foreground glow-primary' : 'glass text-muted-foreground'
-              }`}>
-                {i < progressIdx ? <Check size={16} /> : i + 1}
+      {step !== 'register' && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
+          {progressSteps.map((s, i) => (
+            <div key={s} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-500 ${
+                  i <= progressIdx ? 'gradient-primary text-primary-foreground glow-primary' : 'glass text-muted-foreground'
+                }`}>
+                  {i < progressIdx ? <Check size={16} /> : i + 1}
+                </div>
+                <span className={`text-[10px] mt-1.5 font-medium ${i === progressIdx ? 'text-foreground' : 'text-muted-foreground'}`}>{s}</span>
               </div>
-              <span className={`text-[10px] mt-1.5 font-medium ${i === progressIdx ? 'text-foreground' : 'text-muted-foreground'}`}>{s}</span>
+              {i < progressSteps.length - 1 && (
+                <div className={`w-8 h-0.5 mx-1 mt-[-14px] rounded-full transition-colors duration-500 ${i < progressIdx ? 'bg-primary' : 'bg-border'}`} />
+              )}
             </div>
-            {i < progressSteps.length - 1 && (
-              <div className={`w-8 h-0.5 mx-1 mt-[-14px] rounded-full transition-colors duration-500 ${i < progressIdx ? 'bg-primary' : 'bg-border'}`} />
-            )}
-          </div>
-        ))}
-      </motion.div>
+          ))}
+        </motion.div>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -372,7 +413,6 @@ const OrderPage = () => {
                 </Select>
               </div>
 
-              {/* Notes / details field */}
               <div>
                 <Label className="text-xs mb-1.5 block text-muted-foreground">
                   <FileText size={10} className="inline mr-1" />
@@ -538,8 +578,56 @@ const OrderPage = () => {
                     <span className="font-semibold">Примерный итого</span>
                     <span className="text-xl font-display font-bold text-gradient">{grandTotal} BYN</span>
                   </div>
+                  {grandTotal >= 50 && (
+                    <p className="text-[10px] text-yellow-400 flex items-center gap-1">
+                      <Coins size={10} /> Вы получите +{calculatePointsEarned(grandTotal)} ЕвроБалл(ов)
+                    </p>
+                  )}
                   <p className="text-[10px] text-muted-foreground">* Точную сумму подтвердит менеджер</p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* REGISTER STEP */}
+          {step === 'register' && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary">
+                  <UserIcon size={28} className="text-primary-foreground" />
+                </div>
+                <h2 className="text-2xl font-display font-bold">Почти готово!</h2>
+                <p className="text-sm text-muted-foreground mt-1">Заполните данные для оформления заказа</p>
+              </div>
+
+              <div>
+                <Label className="text-xs mb-1.5 block text-muted-foreground">Ваше имя</Label>
+                <Input
+                  placeholder="Иван Иванов"
+                  value={regForm.name}
+                  onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block text-muted-foreground">Телефон</Label>
+                <Input
+                  type="tel"
+                  placeholder="+375 29 123 45 67"
+                  value={regForm.phone}
+                  onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block text-muted-foreground">Email</Label>
+                <Input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={regForm.email}
+                  onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
+                  className={inputClass}
+                />
               </div>
             </div>
           )}
@@ -547,7 +635,7 @@ const OrderPage = () => {
       </AnimatePresence>
 
       {/* Telegram delivery note */}
-      {step !== 'done' && (
+      {step !== 'done' && step !== 'register' && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -596,6 +684,13 @@ const OrderPage = () => {
               className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 hover:opacity-90"
             >
               Оформить заказ <Check size={16} className="ml-1.5" />
+            </Button>
+          ) : step === 'register' ? (
+            <Button
+              onClick={handleRegister}
+              className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 hover:opacity-90"
+            >
+              Зарегистрироваться и оформить <Check size={16} className="ml-1.5" />
             </Button>
           ) : null}
         </div>

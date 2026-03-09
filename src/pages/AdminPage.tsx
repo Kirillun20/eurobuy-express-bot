@@ -2,10 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getOrders, getReviews, saveReview } from '@/lib/store';
+import { getOrders, getReviews, saveReview, updateOrders } from '@/lib/store';
 import {
-  Order, Review, ORDER_STATUS_LABELS, ALL_STATUSES, OrderStatus,
+  Order, Review, ORDER_STATUS_LABELS, ORDER_STATUS_DESCRIPTIONS, ALL_STATUSES, OrderStatus,
   DELIVERY_METHODS, PAYMENT_METHODS, roundBYN,
 } from '@/lib/types';
 import { toast } from 'sonner';
@@ -13,7 +14,7 @@ import {
   Shield, Lock, Eye, EyeOff, Package, Star, Users, BarChart3,
   Search, Trash2, ChevronDown, ChevronUp, TrendingUp, DollarSign,
   Clock, CheckCircle2, Truck, MapPin, ShieldCheck, ArrowLeft,
-  MessageSquare, Filter,
+  MessageSquare, Filter, Edit3, Save,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -39,6 +40,8 @@ const AdminPage = () => {
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
   const [reviewSearch, setReviewSearch] = useState('');
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState('');
 
   useEffect(() => {
     if (authenticated) {
@@ -56,7 +59,7 @@ const AdminPage = () => {
     }
   };
 
-  const updateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
+  const updateOrderStatus = (orderId: string, newStatus: OrderStatus, comment?: string) => {
     const stored = JSON.parse(localStorage.getItem('eurobuy_orders') || '[]');
     const idx = stored.findIndex((o: Order) => o.id === orderId);
     if (idx === -1) return;
@@ -65,11 +68,28 @@ const AdminPage = () => {
     stored[idx].statusHistory.push({
       status: newStatus,
       date: new Date().toISOString(),
-      comment: 'Обновлено администратором',
+      comment: comment || 'Обновлено администратором',
     });
     localStorage.setItem('eurobuy_orders', JSON.stringify(stored));
     setOrders(stored);
     toast.success(`Статус обновлён: ${ORDER_STATUS_LABELS[newStatus]}`);
+  };
+
+  const updateOrderEstimate = (orderId: string, days: number) => {
+    const stored = JSON.parse(localStorage.getItem('eurobuy_orders') || '[]');
+    const idx = stored.findIndex((o: Order) => o.id === orderId);
+    if (idx === -1) return;
+    stored[idx].estimatedDelivery = new Date(Date.now() + days * 86400000).toISOString();
+    localStorage.setItem('eurobuy_orders', JSON.stringify(stored));
+    setOrders(stored);
+    toast.success(`Срок доставки обновлён: ~${days} дней`);
+  };
+
+  const deleteOrder = (orderId: string) => {
+    const stored = orders.filter(o => o.id !== orderId);
+    localStorage.setItem('eurobuy_orders', JSON.stringify(stored));
+    setOrders(stored);
+    toast.success('Заказ удалён');
   };
 
   const deleteReview = (reviewId: string) => {
@@ -311,31 +331,137 @@ const AdminPage = () => {
                             className="overflow-hidden"
                           >
                             <div className="px-3 pb-3 space-y-3">
+                              {/* Status change */}
                               <div>
                                 <Label className="text-[10px] text-muted-foreground mb-1 block">Изменить статус</Label>
-                                <Select value={order.status} onValueChange={v => updateOrderStatus(order.id, v as OrderStatus)}>
-                                  <SelectTrigger className="glass border-glow bg-transparent h-8 rounded-lg text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="glass-strong rounded-xl">
-                                    {ALL_STATUSES.map(s => (
-                                      <SelectItem key={s} value={s}>{ORDER_STATUS_LABELS[s]}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                  {ALL_STATUSES.map(s => {
+                                    const Icon = STATUS_ICONS[s];
+                                    const isActive = order.status === s;
+                                    return (
+                                      <button
+                                        key={s}
+                                        onClick={() => {
+                                          if (!isActive) {
+                                            if (editingComment === order.id) {
+                                              updateOrderStatus(order.id, s, commentText || undefined);
+                                              setEditingComment(null);
+                                              setCommentText('');
+                                            } else {
+                                              updateOrderStatus(order.id, s);
+                                            }
+                                          }
+                                        }}
+                                        className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all ${
+                                          isActive
+                                            ? 'gradient-primary text-primary-foreground'
+                                            : 'glass hover:border-glow text-muted-foreground hover:text-foreground'
+                                        }`}
+                                      >
+                                        <Icon size={10} />
+                                        {ORDER_STATUS_LABELS[s].split(' ')[0]}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
+
+                              {/* Add comment */}
+                              <div>
+                                {editingComment === order.id ? (
+                                  <div className="space-y-2">
+                                    <Textarea
+                                      placeholder="Комментарий к статусу..."
+                                      value={commentText}
+                                      onChange={e => setCommentText(e.target.value)}
+                                      className="glass border-glow bg-transparent rounded-lg text-xs min-h-[50px]"
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => { setEditingComment(null); setCommentText(''); }}
+                                        variant="outline"
+                                        className="glass border-glow h-7 text-[10px] rounded-lg"
+                                      >
+                                        Отмена
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setEditingComment(order.id)}
+                                    className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    <Edit3 size={10} /> Добавить комментарий при смене статуса
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Estimated delivery */}
+                              <div>
+                                <Label className="text-[10px] text-muted-foreground mb-1 block">Срок доставки</Label>
+                                <div className="flex gap-1.5">
+                                  {[3, 5, 7, 10, 14, 21].map(d => (
+                                    <button
+                                      key={d}
+                                      onClick={() => updateOrderEstimate(order.id, d)}
+                                      className="px-2 py-1 rounded-lg glass text-[10px] hover:border-glow transition-all"
+                                    >
+                                      {d} дн
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Items */}
                               <div className="text-xs space-y-1">
                                 {order.items?.map((item, i) => (
                                   <div key={i} className="glass rounded-lg p-2">
                                     <p className="font-medium truncate text-[11px]">{item.name || item.link}</p>
-                                    <p className="text-[10px] text-muted-foreground">{item.quantity} шт · {item.weight} кг · {item.priceBYN} BYN</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {item.quantity} шт · {item.weight} кг · {item.priceBYN} BYN · {item.country}
+                                    </p>
+                                    {item.notes && (
+                                      <p className="text-[9px] text-muted-foreground/70 mt-0.5">📝 {item.notes}</p>
+                                    )}
                                   </div>
                                 ))}
                               </div>
+
+                              {/* Order details */}
                               <div className="text-[10px] text-muted-foreground space-y-0.5">
-                                <p>Доставка: {DELIVERY_METHODS.find(d => d.id === order.deliveryMethod)?.name || order.deliveryMethod}</p>
+                                <p>Доставка: {DELIVERY_METHODS.find(d => d.id === order.deliveryMethod)?.name || order.deliveryMethod} ({order.deliveryCostBYN} BYN)</p>
                                 <p>Оплата: {PAYMENT_METHODS.find(p => p.id === order.paymentMethod)?.name || order.paymentMethod}</p>
+                                <p>Товары: {order.totalPriceBYN} BYN · Сервис: {order.totalServiceBYN} BYN</p>
+                                <p className="font-bold text-foreground">Итого: {grandTotal} BYN</p>
+                                {order.estimatedDelivery && (
+                                  <p>Ожидаемая доставка: {new Date(order.estimatedDelivery).toLocaleDateString('ru-RU')}</p>
+                                )}
                               </div>
+
+                              {/* Status history */}
+                              {order.statusHistory && order.statusHistory.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-medium mb-1">История статусов</p>
+                                  <div className="space-y-1">
+                                    {order.statusHistory.map((h, hi) => (
+                                      <div key={hi} className="text-[9px] text-muted-foreground flex items-start gap-1.5">
+                                        <span className="shrink-0">{new Date(h.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                        <span>— {ORDER_STATUS_LABELS[h.status]}</span>
+                                        {h.comment && <span className="text-foreground/60">({h.comment})</span>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Delete order */}
+                              <button
+                                onClick={() => deleteOrder(order.id)}
+                                className="flex items-center gap-1 text-[10px] text-destructive hover:text-destructive/80 transition-colors"
+                              >
+                                <Trash2 size={10} /> Удалить заказ
+                              </button>
                             </div>
                           </motion.div>
                         )}
