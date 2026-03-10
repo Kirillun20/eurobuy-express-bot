@@ -22,6 +22,12 @@ const Header = () => {
         </button>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => navigate('/help')}
+            className="w-9 h-9 rounded-xl glass border-glow flex items-center justify-center hover:bg-primary/5 transition-colors"
+          >
+            <HelpCircle size={16} className="text-muted-foreground" />
+          </button>
+          <button
             onClick={() => navigate('/about')}
             className="w-9 h-9 rounded-xl glass border-glow flex items-center justify-center hover:bg-primary/5 transition-colors"
           >
