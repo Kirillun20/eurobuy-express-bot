@@ -1,5 +1,5 @@
 import ThemeToggle from './ThemeToggle';
-import { Info } from 'lucide-react';
+import { HelpCircle, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import logoImg from '@/assets/logo.jpg';
