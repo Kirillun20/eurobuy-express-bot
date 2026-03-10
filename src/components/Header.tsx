@@ -1,5 +1,5 @@
 import ThemeToggle from './ThemeToggle';
-import { Info } from 'lucide-react';
+import { HelpCircle, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import logoImg from '@/assets/logo.jpg';
@@ -21,6 +21,12 @@ const Header = () => {
           </div>
         </button>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/help')}
+            className="w-9 h-9 rounded-xl glass border-glow flex items-center justify-center hover:bg-primary/5 transition-colors"
+          >
+            <HelpCircle size={16} className="text-muted-foreground" />
+          </button>
           <button
             onClick={() => navigate('/about')}
             className="w-9 h-9 rounded-xl glass border-glow flex items-center justify-center hover:bg-primary/5 transition-colors"

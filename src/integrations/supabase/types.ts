@@ -14,7 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          created_at: string
+          delivery_cost_byn: number
+          delivery_method: string
+          discount_applied: number
+          estimated_delivery: string | null
+          id: string
+          items: Json
+          payment_details: Json | null
+          payment_method: string
+          points_earned: number
+          profile_id: string | null
+          status: string
+          status_history: Json
+          total_price_byn: number
+          total_service_byn: number
+          total_weight: number
+          track_number: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_cost_byn?: number
+          delivery_method?: string
+          discount_applied?: number
+          estimated_delivery?: string | null
+          id?: string
+          items?: Json
+          payment_details?: Json | null
+          payment_method?: string
+          points_earned?: number
+          profile_id?: string | null
+          status?: string
+          status_history?: Json
+          total_price_byn?: number
+          total_service_byn?: number
+          total_weight?: number
+          track_number: string
+        }
+        Update: {
+          created_at?: string
+          delivery_cost_byn?: number
+          delivery_method?: string
+          discount_applied?: number
+          estimated_delivery?: string | null
+          id?: string
+          items?: Json
+          payment_details?: Json | null
+          payment_method?: string
+          points_earned?: number
+          profile_id?: string | null
+          status?: string
+          status_history?: Json
+          total_price_byn?: number
+          total_service_byn?: number
+          total_weight?: number
+          track_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      points_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          profile_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          profile_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          profile_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          euro_points: number
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          euro_points?: number
+          id?: string
+          name: string
+          phone?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          euro_points?: number
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          name: string
+          profile_id: string | null
+          rating: number
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          name: string
+          profile_id?: string | null
+          rating?: number
+          text: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          name?: string
+          profile_id?: string | null
+          rating?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
