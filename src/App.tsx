@@ -12,6 +12,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AboutPage from "./pages/AboutPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import AdminPage from "./pages/AdminPage";
+import HelpPage from "./pages/HelpPage";
 import NotFound from "./pages/NotFound";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
