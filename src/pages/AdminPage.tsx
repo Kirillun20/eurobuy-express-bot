@@ -140,7 +140,44 @@ const AdminPage = () => {
     { id: 'orders', label: 'Заказы', icon: Package },
     { id: 'reviews', label: 'Отзывы', icon: Star },
     { id: 'users', label: 'Клиенты', icon: Users },
+    { id: 'chat', label: 'Чат', icon: MessageCircle },
   ];
+
+  // Load chat sessions when tab is selected
+  useEffect(() => {
+    if (activeTab === 'chat' && authenticated) {
+      getAllChatSessions().then(setChatSessions);
+    }
+  }, [activeTab, authenticated]);
+
+  // Load messages for selected session
+  useEffect(() => {
+    if (!selectedSession) return;
+    getChatMessages(selectedSession).then(setSessionMessages);
+  }, [selectedSession]);
+
+  // Realtime for admin chat
+  useEffect(() => {
+    if (!selectedSession) return;
+    const channel = supabase
+      .channel(`admin-chat-${selectedSession}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSession}` },
+        (payload) => {
+          const m = payload.new as any;
+          const msg: ChatMessage = { id: m.id, sessionId: m.session_id, text: m.text, isUser: m.is_user, isAdmin: m.is_admin, createdAt: m.created_at };
+          setSessionMessages(prev => prev.some(p => p.id === msg.id) ? prev : [...prev, msg]);
+        }
+      ).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedSession]);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [sessionMessages]);
+
+  const handleAdminReply = async () => {
+    if (!adminReply.trim() || !selectedSession) return;
+    await sendChatMessage(selectedSession, adminReply.trim(), false, true);
+    setAdminReply('');
+  };
 
   return (
     <div className="px-4 py-6 pb-20 max-w-2xl mx-auto">
