@@ -435,6 +435,62 @@ const AdminPage = () => {
               </div>
             </div>
           )}
+
+          {/* CHAT */}
+          {activeTab === 'chat' && (
+            <div className="space-y-4">
+              {!selectedSession ? (
+                <>
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><MessageCircle size={14} className="text-primary" /> Сессии чата</h3>
+                  {chatSessions.length === 0 && <p className="text-sm text-muted-foreground text-center py-12">Нет сообщений</p>}
+                  <div className="space-y-2">
+                    {chatSessions.map(s => (
+                      <button key={s.sessionId} onClick={() => setSelectedSession(s.sessionId)}
+                        className="w-full glass rounded-xl p-4 border-glow text-left hover:shadow-glow transition-all flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center shrink-0">
+                          <MessageCircle size={14} className="text-primary-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{s.lastMessage}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(s.lastTime).toLocaleString('ru-RU')}</p>
+                        </div>
+                        {s.unread > 0 && <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{s.unread}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <button onClick={() => setSelectedSession(null)} className="p-2 rounded-xl glass hover:border-glow"><ArrowLeft size={14} /></button>
+                    <h3 className="text-sm font-semibold">Чат #{selectedSession.slice(0, 8)}</h3>
+                  </div>
+                  <div className="glass rounded-2xl border-glow overflow-hidden">
+                    <div className="h-80 overflow-y-auto p-4 space-y-3">
+                      {sessionMessages.map(msg => (
+                        <div key={msg.id} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
+                            msg.isUser ? 'bg-muted rounded-br-md' : msg.isAdmin ? 'gradient-primary text-primary-foreground rounded-bl-md' : 'glass border-glow rounded-bl-md'
+                          }`}>
+                            {msg.isAdmin && <p className="text-[9px] font-semibold mb-0.5 opacity-70">Админ</p>}
+                            <p className="text-xs leading-relaxed">{msg.text}</p>
+                            <p className="text-[9px] mt-1 opacity-50">{new Date(msg.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                      ))}
+                      <div ref={chatEndRef} />
+                    </div>
+                    <div className="p-3 border-t border-border flex gap-2">
+                      <Input placeholder="Ответить..." value={adminReply} onChange={e => setAdminReply(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleAdminReply()}
+                        className="glass border-glow bg-transparent h-10 rounded-xl text-xs flex-1" />
+                      <Button onClick={handleAdminReply} size="icon" className="gradient-primary text-primary-foreground h-10 w-10 rounded-xl border-0"><Send size={16} /></Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
       )}
