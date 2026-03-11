@@ -207,3 +207,59 @@ export async function spendEuroPointsDb(profileId: string, points: number): Prom
   await addPointsTransaction(profileId, points, 'spent', `Обменяно на скидку`);
   return true;
 }
+
+// =================== CHAT ===================
+
+export interface ChatMessage {
+  id: string;
+  sessionId: string;
+  text: string;
+  isUser: boolean;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+export async function getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+  const { data } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true });
+  return (data || []).map((m: any) => ({
+    id: m.id,
+    sessionId: m.session_id,
+    text: m.text,
+    isUser: m.is_user,
+    isAdmin: m.is_admin,
+    createdAt: m.created_at,
+  }));
+}
+
+export async function sendChatMessage(sessionId: string, text: string, isUser: boolean, isAdmin: boolean = false): Promise<ChatMessage | null> {
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .insert({ session_id: sessionId, text, is_user: isUser, is_admin: isAdmin })
+    .select()
+    .single();
+  if (error || !data) return null;
+  return { id: data.id, sessionId: data.session_id, text: data.text, isUser: data.is_user, isAdmin: data.is_admin, createdAt: data.created_at };
+}
+
+export async function getAllChatSessions(): Promise<{ sessionId: string; lastMessage: string; lastTime: string; unread: number }[]> {
+  const { data } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (!data) return [];
+  const sessions = new Map<string, { lastMessage: string; lastTime: string; unread: number }>();
+  for (const m of data) {
+    if (!sessions.has(m.session_id)) {
+      sessions.set(m.session_id, { lastMessage: m.text, lastTime: m.created_at, unread: 0 });
+    }
+    if (m.is_user && !m.is_admin) {
+      const s = sessions.get(m.session_id)!;
+      s.unread++;
+    }
+  }
+  return Array.from(sessions.entries()).map(([sessionId, info]) => ({ sessionId, ...info }));
+}

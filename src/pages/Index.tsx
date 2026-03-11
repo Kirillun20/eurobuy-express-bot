@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowRight, Shield, Truck, Clock, Globe, Star, Zap, Sparkles, Search, Package, MessageSquare, Send } from 'lucide-react';
+import { ArrowRight, Shield, Truck, Clock, Globe, Star, Zap, Sparkles, Search, Package, MessageSquare, Send, ShoppingCart } from 'lucide-react';
 import { useNavigate, type NavigateFunction } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -180,6 +180,24 @@ const Index = () => {
               </motion.div>
             )}
           </AnimatePresence>
+        </motion.div>
+      </section>
+
+      {/* Avito & Russia */}
+      <section className="px-4 py-2 max-w-lg mx-auto">
+        <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          className="glass rounded-2xl p-4 border-glow relative overflow-hidden group cursor-default">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <ShoppingCart size={20} className="text-emerald-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display font-bold text-sm">Заказывайте с Авито</h3>
+              <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">Выкупаем и доставляем товары с Авито и любых платформ России</p>
+            </div>
+            <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" />
+          </div>
         </motion.div>
       </section>
 

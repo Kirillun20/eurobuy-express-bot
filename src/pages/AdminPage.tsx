@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById } from '@/lib/db';
+import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById, getAllChatSessions, getChatMessages, sendChatMessage, ChatMessage } from '@/lib/db';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Order, Review, ORDER_STATUS_LABELS, ORDER_STATUS_DESCRIPTIONS, ALL_STATUSES, OrderStatus,
   DELIVERY_METHODS, PAYMENT_METHODS, roundBYN, User, StatusUpdate,
@@ -14,7 +15,7 @@ import {
   Shield, Lock, Eye, EyeOff, Package, Star, Users, BarChart3,
   Search, Trash2, ChevronDown, ChevronUp, TrendingUp, DollarSign,
   Clock, CheckCircle2, Truck, MapPin, ShieldCheck, ArrowLeft,
-  MessageSquare, Filter, Edit3, Phone, Mail,
+  MessageSquare, Filter, Edit3, Phone, Mail, MessageCircle, Send,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -26,7 +27,7 @@ const STATUS_ICONS: Record<string, typeof Package> = {
   shipped: Truck, customs: MapPin, delivered: CheckCircle2,
 };
 
-type Tab = 'stats' | 'orders' | 'reviews' | 'users';
+type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -44,6 +45,11 @@ const AdminPage = () => {
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [chatSessions, setChatSessions] = useState<{ sessionId: string; lastMessage: string; lastTime: string; unread: number }[]>([]);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [sessionMessages, setSessionMessages] = useState<ChatMessage[]>([]);
+  const [adminReply, setAdminReply] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (authenticated) {
@@ -107,6 +113,40 @@ const AdminPage = () => {
     return reviews.filter(r => r.name.toLowerCase().includes(q) || r.text.toLowerCase().includes(q));
   }, [reviews, reviewSearch]);
 
+  // Load chat sessions when tab is selected
+  useEffect(() => {
+    if (activeTab === 'chat' && authenticated) {
+      getAllChatSessions().then(setChatSessions);
+    }
+  }, [activeTab, authenticated]);
+
+  useEffect(() => {
+    if (!selectedSession) return;
+    getChatMessages(selectedSession).then(setSessionMessages);
+  }, [selectedSession]);
+
+  useEffect(() => {
+    if (!selectedSession) return;
+    const channel = supabase
+      .channel(`admin-chat-${selectedSession}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSession}` },
+        (payload) => {
+          const m = payload.new as any;
+          const msg: ChatMessage = { id: m.id, sessionId: m.session_id, text: m.text, isUser: m.is_user, isAdmin: m.is_admin, createdAt: m.created_at };
+          setSessionMessages(prev => prev.some(p => p.id === msg.id) ? prev : [...prev, msg]);
+        }
+      ).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedSession]);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [sessionMessages]);
+
+  const handleAdminReply = async () => {
+    if (!adminReply.trim() || !selectedSession) return;
+    await sendChatMessage(selectedSession, adminReply.trim(), false, true);
+    setAdminReply('');
+  };
+
   if (!authenticated) {
     return (
       <div className="px-4 py-6 pb-20 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[60vh]">
@@ -134,7 +174,9 @@ const AdminPage = () => {
     { id: 'orders', label: 'Заказы', icon: Package },
     { id: 'reviews', label: 'Отзывы', icon: Star },
     { id: 'users', label: 'Клиенты', icon: Users },
+    { id: 'chat', label: 'Чат', icon: MessageCircle },
   ];
+
 
   return (
     <div className="px-4 py-6 pb-20 max-w-2xl mx-auto">
@@ -390,6 +432,62 @@ const AdminPage = () => {
                 ))}
                 {profiles.length === 0 && <div className="text-center py-12 text-sm text-muted-foreground">Нет клиентов</div>}
               </div>
+            </div>
+          )}
+
+          {/* CHAT */}
+          {activeTab === 'chat' && (
+            <div className="space-y-4">
+              {!selectedSession ? (
+                <>
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><MessageCircle size={14} className="text-primary" /> Сессии чата</h3>
+                  {chatSessions.length === 0 && <p className="text-sm text-muted-foreground text-center py-12">Нет сообщений</p>}
+                  <div className="space-y-2">
+                    {chatSessions.map(s => (
+                      <button key={s.sessionId} onClick={() => setSelectedSession(s.sessionId)}
+                        className="w-full glass rounded-xl p-4 border-glow text-left hover:shadow-glow transition-all flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center shrink-0">
+                          <MessageCircle size={14} className="text-primary-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{s.lastMessage}</p>
+                          <p className="text-[10px] text-muted-foreground">{new Date(s.lastTime).toLocaleString('ru-RU')}</p>
+                        </div>
+                        {s.unread > 0 && <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-bold">{s.unread}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <button onClick={() => setSelectedSession(null)} className="p-2 rounded-xl glass hover:border-glow"><ArrowLeft size={14} /></button>
+                    <h3 className="text-sm font-semibold">Чат #{selectedSession.slice(0, 8)}</h3>
+                  </div>
+                  <div className="glass rounded-2xl border-glow overflow-hidden">
+                    <div className="h-80 overflow-y-auto p-4 space-y-3">
+                      {sessionMessages.map(msg => (
+                        <div key={msg.id} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
+                            msg.isUser ? 'bg-muted rounded-br-md' : msg.isAdmin ? 'gradient-primary text-primary-foreground rounded-bl-md' : 'glass border-glow rounded-bl-md'
+                          }`}>
+                            {msg.isAdmin && <p className="text-[9px] font-semibold mb-0.5 opacity-70">Админ</p>}
+                            <p className="text-xs leading-relaxed">{msg.text}</p>
+                            <p className="text-[9px] mt-1 opacity-50">{new Date(msg.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                      ))}
+                      <div ref={chatEndRef} />
+                    </div>
+                    <div className="p-3 border-t border-border flex gap-2">
+                      <Input placeholder="Ответить..." value={adminReply} onChange={e => setAdminReply(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleAdminReply()}
+                        className="glass border-glow bg-transparent h-10 rounded-xl text-xs flex-1" />
+                      <Button onClick={handleAdminReply} size="icon" className="gradient-primary text-primary-foreground h-10 w-10 rounded-xl border-0"><Send size={16} /></Button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </motion.div>
