@@ -27,7 +27,7 @@ const STATUS_ICONS: Record<string, typeof Package> = {
   shipped: Truck, customs: MapPin, delivered: CheckCircle2,
 };
 
-type Tab = 'stats' | 'orders' | 'reviews' | 'users';
+type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat';
 
 const AdminPage = () => {
   const navigate = useNavigate();
