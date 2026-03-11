@@ -45,6 +45,11 @@ const AdminPage = () => {
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [chatSessions, setChatSessions] = useState<{ sessionId: string; lastMessage: string; lastTime: string; unread: number }[]>([]);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [sessionMessages, setSessionMessages] = useState<ChatMessage[]>([]);
+  const [adminReply, setAdminReply] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (authenticated) {
