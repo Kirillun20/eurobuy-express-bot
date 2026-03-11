@@ -15,7 +15,7 @@ import {
   Shield, Lock, Eye, EyeOff, Package, Star, Users, BarChart3,
   Search, Trash2, ChevronDown, ChevronUp, TrendingUp, DollarSign,
   Clock, CheckCircle2, Truck, MapPin, ShieldCheck, ArrowLeft,
-  MessageSquare, Filter, Edit3, Phone, Mail,
+  MessageSquare, Filter, Edit3, Phone, Mail, MessageCircle, Send,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
