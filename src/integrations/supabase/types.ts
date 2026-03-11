@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean
+          is_user: boolean
+          session_id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          is_user?: boolean
+          session_id: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          is_user?: boolean
+          session_id?: string
+          text?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
