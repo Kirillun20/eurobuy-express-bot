@@ -13,6 +13,7 @@ import AboutPage from "./pages/AboutPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import AdminPage from "./pages/AdminPage";
 import HelpPage from "./pages/HelpPage";
+import AvitoOrderPage from "./pages/AvitoOrderPage";
 import NotFound from "./pages/NotFound";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -34,6 +35,7 @@ const AppContent = () => {
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/calculator" element={<CalculatorPage />} />
           <Route path="/order" element={<OrderPage />} />
+          <Route path="/order-russia" element={<AvitoOrderPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/help" element={<HelpPage />} />

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Globe, Shield, Users, Heart, MapPin, Clock, Package } from 'lucide-react';
+import { Globe, Shield, Users, Heart, MapPin, Clock, Package, Truck, AlertCircle, Scale, CreditCard, FileText, CheckCircle2 } from 'lucide-react';
 
 const stats = [
   { icon: Package, value: '10,000+', label: 'Заказов выполнено' },
@@ -12,6 +12,69 @@ const values = [
   { icon: Shield, title: 'Надёжность', desc: 'Каждый заказ застрахован. Мы берём на себя все риски доставки.' },
   { icon: Heart, title: 'Забота', desc: 'Индивидуальный подход к каждому клиенту и его потребностям.' },
   { icon: Globe, title: 'Доступность', desc: 'Делаем европейские товары доступными для каждого.' },
+];
+
+const deliveryTerms = [
+  {
+    icon: Truck,
+    title: 'Сроки доставки',
+    items: [
+      'Европа → Минск: 5–14 рабочих дней',
+      'Россия → Минск: 3–7 рабочих дней',
+      'Курьером по Минску: 1–2 дня после получения',
+      'СДЭК / Европочта: 3–10 рабочих дней',
+    ],
+  },
+  {
+    icon: Scale,
+    title: 'Ограничения',
+    items: [
+      'Максимальный вес одной посылки: 25 кг',
+      'Максимальная стоимость товара: 500 EUR',
+      'Запрещено: оружие, наркотические вещества, контрафакт',
+      'Батарейки и аккумуляторы — уточняйте у менеджера',
+    ],
+  },
+  {
+    icon: CreditCard,
+    title: 'Оплата и стоимость',
+    items: [
+      'Сервисный сбор: 15–18% от стоимости товара',
+      'Минимальный сбор определяется по весу (от $6)',
+      'Оплата: карта, перевод (BY/RU банки), наличные',
+      'Оплата при получении доступна для Минска',
+    ],
+  },
+  {
+    icon: Shield,
+    title: 'Гарантии и возврат',
+    items: [
+      'Все посылки застрахованы на полную стоимость',
+      'При повреждении — полная компенсация',
+      'Если товар не соответствует описанию — решаем вопрос',
+      'Фотоотчёт товара до отправки по запросу',
+    ],
+  },
+  {
+    icon: FileText,
+    title: 'Таможня',
+    items: [
+      'Беспошлинный ввоз до 200 EUR / 31 кг в месяц',
+      'При превышении — таможенная пошлина 30%',
+      'Мы помогаем с таможенным оформлением',
+      'Декларирование включено в сервис',
+    ],
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Программа лояльности',
+    items: [
+      '1 ЕвроБалл за каждые 50 BYN заказа',
+      'Баллы можно обменять на скидки до 10%',
+      'Скидка на доставку за 1 балл',
+      'Баллы не сгорают и накапливаются',
+    ],
+  },
 ];
 
 const container = {
@@ -92,6 +155,34 @@ const AboutPage = () => {
               <div>
                 <h3 className="font-display font-semibold text-sm">{title}</h3>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* Delivery Terms */}
+      <section className="px-4 py-8 max-w-lg mx-auto">
+        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+          <h2 className="text-2xl font-display font-bold mb-2">Условия доставки</h2>
+          <p className="text-sm text-muted-foreground mb-6">Всё, что нужно знать перед заказом</p>
+        </motion.div>
+        <motion.div variants={container} initial="hidden" whileInView="show" viewport={{ once: true }} className="space-y-3">
+          {deliveryTerms.map(({ icon: Icon, title, items: termItems }) => (
+            <motion.div key={title} variants={item} className="glass rounded-2xl p-5 border-glow hover:shadow-glow transition-shadow duration-300">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Icon size={20} className="text-primary" />
+                </div>
+                <h3 className="font-display font-bold text-sm">{title}</h3>
+              </div>
+              <div className="space-y-2 ml-[52px]">
+                {termItems.map((text, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-1.5 shrink-0" />
+                    <p className="text-[12px] text-muted-foreground leading-relaxed">{text}</p>
+                  </div>
+                ))}
               </div>
             </motion.div>
           ))}
