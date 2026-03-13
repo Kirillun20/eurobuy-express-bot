@@ -199,14 +199,14 @@ export interface EuroPointsReward {
 }
 
 export const EUROPOINTS_REWARDS: EuroPointsReward[] = [
-  { id: 'delivery_10', name: 'Скидка на доставку 10 BYN', description: 'Полная скидка на доставку курьером', cost: 1, type: 'delivery_discount', value: 10 },
-  { id: 'discount_2', name: 'Скидка 2%', description: 'На стоимость товаров', cost: 2, type: 'percent_discount', value: 2 },
-  { id: 'discount_3', name: 'Скидка 3%', description: 'На стоимость товаров', cost: 3, type: 'percent_discount', value: 3 },
-  { id: 'discount_5', name: 'Скидка 5%', description: 'На стоимость товаров', cost: 5, type: 'percent_discount', value: 5 },
-  { id: 'discount_10', name: 'Скидка 10%', description: 'На стоимость товаров', cost: 10, type: 'percent_discount', value: 10 },
+  { id: 'delivery_10', name: 'Скидка на доставку 10 BYN', description: 'Полная скидка на доставку курьером', cost: 3, type: 'delivery_discount', value: 10 },
+  { id: 'discount_2', name: 'Скидка 2%', description: 'На стоимость товаров', cost: 5, type: 'percent_discount', value: 2 },
+  { id: 'discount_3', name: 'Скидка 3%', description: 'На стоимость товаров', cost: 10, type: 'percent_discount', value: 3 },
+  { id: 'discount_5', name: 'Скидка 5%', description: 'На стоимость товаров', cost: 20, type: 'percent_discount', value: 5 },
+  { id: 'discount_10', name: 'Скидка 10%', description: 'На стоимость товаров', cost: 40, type: 'percent_discount', value: 10 },
 ];
 
-// Points earned per order: 1 point per 50 BYN spent
+// Points earned per order: 1 point per 10 BYN spent
 export function calculatePointsEarned(totalBYN: number): number {
-  return Math.floor(totalBYN / 50);
+  return Math.floor(totalBYN / 10);
 }

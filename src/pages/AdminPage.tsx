@@ -4,18 +4,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById, getAllChatSessions, getChatMessages, sendChatMessage, ChatMessage } from '@/lib/db';
+import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById, getAllChatSessions, getChatMessages, sendChatMessage, ChatMessage, getBankRequisites, updateSetting } from '@/lib/db';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Order, Review, ORDER_STATUS_LABELS, ORDER_STATUS_DESCRIPTIONS, ALL_STATUSES, OrderStatus,
+  Order, Review, ORDER_STATUS_LABELS, ALL_STATUSES, OrderStatus,
   DELIVERY_METHODS, PAYMENT_METHODS, roundBYN, User, StatusUpdate,
 } from '@/lib/types';
+import { DEFAULT_BANKS, BankInfo } from '@/lib/delivery-config';
 import { toast } from 'sonner';
 import {
   Shield, Lock, Eye, EyeOff, Package, Star, Users, BarChart3,
   Search, Trash2, ChevronDown, ChevronUp, TrendingUp, DollarSign,
   Clock, CheckCircle2, Truck, MapPin, ShieldCheck, ArrowLeft,
   MessageSquare, Filter, Edit3, Phone, Mail, MessageCircle, Send,
+  Settings, Save, Plus, CreditCard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -27,7 +29,7 @@ const STATUS_ICONS: Record<string, typeof Package> = {
   shipped: Truck, customs: MapPin, delivered: CheckCircle2,
 };
 
-type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat';
+type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat' | 'settings';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -50,6 +52,11 @@ const AdminPage = () => {
   const [sessionMessages, setSessionMessages] = useState<ChatMessage[]>([]);
   const [adminReply, setAdminReply] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
+  // Settings state
+  const [banks, setBanks] = useState<Record<'by' | 'ru', BankInfo[]>>(DEFAULT_BANKS);
+  const [editingBank, setEditingBank] = useState<{ region: 'by' | 'ru'; index: number } | null>(null);
+  const [editBankForm, setEditBankForm] = useState({ id: '', name: '', card: '' });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     if (authenticated) {
@@ -59,6 +66,13 @@ const AdminPage = () => {
       });
     }
   }, [authenticated]);
+
+  // Load bank requisites
+  useEffect(() => {
+    if (authenticated && activeTab === 'settings') {
+      getBankRequisites().then(data => { if (data) setBanks(data); });
+    }
+  }, [authenticated, activeTab]);
 
   const handleLogin = () => {
     if (password === ADMIN_PASSWORD) { setAuthenticated(true); toast.success('Вход выполнен'); }
@@ -113,7 +127,6 @@ const AdminPage = () => {
     return reviews.filter(r => r.name.toLowerCase().includes(q) || r.text.toLowerCase().includes(q));
   }, [reviews, reviewSearch]);
 
-  // Load chat sessions when tab is selected
   useEffect(() => {
     if (activeTab === 'chat' && authenticated) {
       getAllChatSessions().then(setChatSessions);
@@ -147,6 +160,43 @@ const AdminPage = () => {
     setAdminReply('');
   };
 
+  // Settings handlers
+  const startEditBank = (region: 'by' | 'ru', index: number) => {
+    const bank = banks[region][index];
+    setEditingBank({ region, index });
+    setEditBankForm({ id: bank.id, name: bank.name, card: bank.card });
+  };
+
+  const saveEditBank = () => {
+    if (!editingBank) return;
+    const newBanks = { ...banks };
+    newBanks[editingBank.region] = [...newBanks[editingBank.region]];
+    newBanks[editingBank.region][editingBank.index] = { ...editBankForm };
+    setBanks(newBanks);
+    setEditingBank(null);
+  };
+
+  const addBank = (region: 'by' | 'ru') => {
+    const newBanks = { ...banks };
+    newBanks[region] = [...newBanks[region], { id: `bank_${Date.now()}`, name: 'Новый банк', card: '0000 0000 0000 0000' }];
+    setBanks(newBanks);
+  };
+
+  const removeBank = (region: 'by' | 'ru', index: number) => {
+    const newBanks = { ...banks };
+    newBanks[region] = newBanks[region].filter((_, i) => i !== index);
+    setBanks(newBanks);
+  };
+
+  const saveBankSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await updateSetting('bank_requisites', banks);
+      toast.success('Реквизиты сохранены!');
+    } catch { toast.error('Ошибка сохранения'); }
+    finally { setSavingSettings(false); }
+  };
+
   if (!authenticated) {
     return (
       <div className="px-4 py-6 pb-20 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[60vh]">
@@ -175,8 +225,8 @@ const AdminPage = () => {
     { id: 'reviews', label: 'Отзывы', icon: Star },
     { id: 'users', label: 'Клиенты', icon: Users },
     { id: 'chat', label: 'Чат', icon: MessageCircle },
+    { id: 'settings', label: 'Настройки', icon: Settings },
   ];
-
 
   return (
     <div className="px-4 py-6 pb-20 max-w-2xl mx-auto">
@@ -283,7 +333,6 @@ const AdminPage = () => {
                         {isExpanded && (
                           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                             <div className="px-3 pb-3 space-y-3">
-                              {/* Client info */}
                               {profile && (
                                 <div className="glass rounded-lg p-2.5">
                                   <p className="text-[10px] text-muted-foreground mb-1">Клиент</p>
@@ -292,7 +341,6 @@ const AdminPage = () => {
                                   {profile.phone && <p className="text-[10px] text-muted-foreground flex items-center gap-1"><Phone size={9} />{profile.phone}</p>}
                                 </div>
                               )}
-                              {/* Status change */}
                               <div>
                                 <Label className="text-[10px] text-muted-foreground mb-1 block">Изменить статус</Label>
                                 <div className="grid grid-cols-3 gap-1.5">
@@ -315,7 +363,6 @@ const AdminPage = () => {
                                   })}
                                 </div>
                               </div>
-                              {/* Comment */}
                               <div>
                                 {editingComment === order.id ? (
                                   <div className="space-y-2">
@@ -326,7 +373,6 @@ const AdminPage = () => {
                                   <button onClick={() => setEditingComment(order.id)} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"><Edit3 size={10} /> Комментарий при смене статуса</button>
                                 )}
                               </div>
-                              {/* Estimate */}
                               <div>
                                 <Label className="text-[10px] text-muted-foreground mb-1 block">Срок доставки</Label>
                                 <div className="flex gap-1.5">
@@ -335,7 +381,6 @@ const AdminPage = () => {
                                   ))}
                                 </div>
                               </div>
-                              {/* Items */}
                               <div className="text-xs space-y-1">
                                 {order.items?.map((item, i) => (
                                   <div key={i} className="glass rounded-lg p-2">
@@ -349,7 +394,6 @@ const AdminPage = () => {
                                 <p>Оплата: {PAYMENT_METHODS.find(p => p.id === order.paymentMethod)?.name || order.paymentMethod}</p>
                                 <p className="font-bold text-foreground">Итого: {grandTotal} BYN</p>
                               </div>
-                              {/* History */}
                               {order.statusHistory?.length > 0 && (
                                 <div>
                                   <p className="text-[10px] font-medium mb-1">История</p>
@@ -488,6 +532,62 @@ const AdminPage = () => {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {/* SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold flex items-center gap-2"><CreditCard size={14} className="text-primary" /> Реквизиты банков</h3>
+                <Button onClick={saveBankSettings} disabled={savingSettings} size="sm" className="gradient-primary text-primary-foreground h-8 rounded-lg border-0 text-xs">
+                  <Save size={12} className="mr-1" /> {savingSettings ? 'Сохранение...' : 'Сохранить'}
+                </Button>
+              </div>
+
+              {(['by', 'ru'] as const).map(region => (
+                <div key={region} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold flex items-center gap-1.5">
+                      {region === 'by' ? '🇧🇾 Беларусь' : '🇷🇺 Россия'}
+                    </h4>
+                    <button onClick={() => addBank(region)} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80">
+                      <Plus size={10} /> Добавить банк
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {banks[region].map((bank, idx) => (
+                      <div key={bank.id} className="glass rounded-xl p-3 border-glow">
+                        {editingBank?.region === region && editingBank?.index === idx ? (
+                          <div className="space-y-2">
+                            <Input placeholder="ID банка" value={editBankForm.id} onChange={e => setEditBankForm(f => ({ ...f, id: e.target.value }))}
+                              className="glass border-glow bg-transparent h-8 rounded-lg text-xs" />
+                            <Input placeholder="Название банка" value={editBankForm.name} onChange={e => setEditBankForm(f => ({ ...f, name: e.target.value }))}
+                              className="glass border-glow bg-transparent h-8 rounded-lg text-xs" />
+                            <Input placeholder="Номер карты" value={editBankForm.card} onChange={e => setEditBankForm(f => ({ ...f, card: e.target.value }))}
+                              className="glass border-glow bg-transparent h-8 rounded-lg text-xs font-mono" />
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={saveEditBank} className="gradient-primary text-primary-foreground h-7 rounded-lg text-[10px] border-0"><Save size={10} className="mr-1" /> Сохранить</Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingBank(null)} className="glass border-glow h-7 rounded-lg text-[10px]">Отмена</Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-semibold">{bank.name}</p>
+                              <p className="text-[10px] text-muted-foreground font-mono">{bank.card}</p>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => startEditBank(region, idx)} className="p-1.5 rounded-lg glass hover:border-glow"><Edit3 size={12} className="text-muted-foreground" /></button>
+                              <button onClick={() => removeBank(region, idx)} className="p-1.5 rounded-lg hover:bg-destructive/10"><Trash2 size={12} className="text-destructive" /></button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </motion.div>

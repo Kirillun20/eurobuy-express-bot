@@ -1,17 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  COUNTRIES, CURRENCIES, DELIVERY_METHODS, PAYMENT_METHODS,
+  COUNTRIES, CURRENCIES,
   Order, OrderItem, MAX_WEIGHT_KG, MAX_PRICE_EUR,
   roundBYN, generateTrackNumber,
-  getWeightPriceUSD, calculatePointsEarned, User, BANKS, PaymentDetails,
+  getWeightPriceUSD, calculatePointsEarned, User, PaymentDetails,
 } from '@/lib/types';
+import {
+  DELIVERY_METHODS_V2, PAYMENT_METHODS_V2, PACKAGING_OPTIONS,
+  getDeliveryCost, getDeliveryLabel, getCodSurcharge, DEFAULT_BANKS, BankInfo,
+} from '@/lib/delivery-config';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import { createOrder, createProfile, getProfileByEmail, addEuroPointsDb } from '@/lib/db';
+import { createOrder, createProfile, getProfileByEmail, addEuroPointsDb, getBankRequisites } from '@/lib/db';
 import { saveUser, getUser } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -19,15 +23,14 @@ import {
   ArrowLeft, ArrowRight, Check, Package, CreditCard,
   ShoppingBag, Wallet, Banknote, Plus, Trash2, AlertTriangle, Sparkles, Copy,
   FileText, RefreshCw, Info, Coins, User as UserIcon, Building2, Eye, EyeOff,
+  Star, Bitcoin, Send,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Step = 'item' | 'confirm_more' | 'delivery' | 'payment' | 'payment_details' | 'register' | 'done';
 
-const STEP_ORDER: Step[] = ['item', 'confirm_more', 'delivery', 'payment', 'payment_details', 'register', 'done'];
-
 const PAYMENT_ICONS: Record<string, typeof CreditCard> = {
-  card: CreditCard, cash: Wallet, transfer: Banknote,
+  cash: Wallet, transfer: Banknote, cod: Package, telegram_stars: Star, crypto: Bitcoin,
 };
 
 const emptyItem = () => ({
@@ -41,15 +44,20 @@ const OrderPage = () => {
   const [currentItem, setCurrentItem] = useState(emptyItem());
   const [items, setItems] = useState<OrderItem[]>([]);
   const [deliveryMethod, setDeliveryMethod] = useState('courier_minsk');
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [regForm, setRegForm] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
-  // Payment details state
   const [selectedBank, setSelectedBank] = useState('');
   const [bankRegion, setBankRegion] = useState<'by' | 'ru'>('by');
-  const [cardNumber, setCardNumber] = useState('');
   const [showCard, setShowCard] = useState(false);
+  const [selectedBox, setSelectedBox] = useState('');
+  const [expandedBoxCategory, setExpandedBoxCategory] = useState<string | null>(null);
+  const [banks, setBanks] = useState<Record<'by' | 'ru', BankInfo[]>>(DEFAULT_BANKS);
+
+  useEffect(() => {
+    getBankRequisites().then(data => { if (data) setBanks(data); });
+  }, []);
 
   const update = (key: string, value: string) => setCurrentItem(prev => ({ ...prev, [key]: value }));
   const user = getUser();
@@ -62,27 +70,20 @@ const OrderPage = () => {
   const overPrice = priceEUR > MAX_PRICE_EUR;
 
   const serviceCostBYN = (() => {
-    const percentCost = priceBYN * 0.18;
+    const percentCost = priceBYN * 0.22;
     const weightCostUSD = getWeightPriceUSD(weightNum);
     const weightCostBYN = weightCostUSD * rates.USD;
     return Math.max(percentCost, weightCostBYN);
   })();
 
-  const canAddItem = () => {
-    return (currentItem.link || currentItem.name) && currentItem.price && currentItem.country && !overWeight && !overPrice;
-  };
+  const canAddItem = () => (currentItem.link || currentItem.name) && currentItem.price && currentItem.country && !overWeight && !overPrice;
 
   const addItem = () => {
     const item: OrderItem = {
-      link: currentItem.link,
-      name: currentItem.name,
-      quantity: parseInt(currentItem.quantity) || 1,
-      weight: weightNum,
-      price: priceNum,
-      currency: currentItem.currency,
-      country: currentItem.country,
-      priceBYN: roundBYN(priceBYN),
-      serviceCostBYN: roundBYN(serviceCostBYN),
+      link: currentItem.link, name: currentItem.name,
+      quantity: parseInt(currentItem.quantity) || 1, weight: weightNum,
+      price: priceNum, currency: currentItem.currency, country: currentItem.country,
+      priceBYN: roundBYN(priceBYN), serviceCostBYN: roundBYN(serviceCostBYN),
       notes: currentItem.notes || undefined,
     };
     setItems(prev => [...prev, item]);
@@ -90,78 +91,44 @@ const OrderPage = () => {
     setStep('confirm_more');
   };
 
-  const removeItem = (idx: number) => {
-    setItems(prev => prev.filter((_, i) => i !== idx));
-  };
+  const removeItem = (idx: number) => setItems(prev => prev.filter((_, i) => i !== idx));
 
   const totalWeight = items.reduce((s, i) => s + i.weight, 0);
   const totalPriceBYN = items.reduce((s, i) => s + i.priceBYN, 0);
   const totalServiceBYN = items.reduce((s, i) => s + i.serviceCostBYN, 0);
-  const dm = DELIVERY_METHODS.find(d => d.id === deliveryMethod)!;
-  const deliveryCostBYN = dm?.priceBYN || 0;
-  const grandTotal = roundBYN(totalPriceBYN + totalServiceBYN + deliveryCostBYN);
+  const deliveryCostBYN = getDeliveryCost(deliveryMethod, totalWeight);
+  const selectedBoxInfo = PACKAGING_OPTIONS.flatMap(c => c.items).find(b => b.id === selectedBox);
+  const boxCostBYN = deliveryMethod === 'europost' && selectedBoxInfo ? selectedBoxInfo.price : 0;
+  const codSurcharge = paymentMethod === 'cod' ? getCodSurcharge(totalPriceBYN) : 0;
+  const grandTotal = roundBYN(totalPriceBYN + totalServiceBYN + deliveryCostBYN + boxCostBYN + codSurcharge);
 
   const handleRegister = async () => {
-    if (!regForm.name.trim() || !regForm.email.trim() || !regForm.phone.trim()) {
-      toast.error('Заполните все поля');
-      return;
-    }
+    if (!regForm.name.trim() || !regForm.email.trim() || !regForm.phone.trim()) { toast.error('Заполните все поля'); return; }
     setSubmitting(true);
     try {
-      // Check if profile exists
       let profile = await getProfileByEmail(regForm.email.trim());
-      if (!profile) {
-        profile = await createProfile({
-          name: regForm.name.trim(),
-          email: regForm.email.trim(),
-          phone: regForm.phone.trim(),
-        });
-      }
+      if (!profile) profile = await createProfile({ name: regForm.name.trim(), email: regForm.email.trim(), phone: regForm.phone.trim() });
       if (profile) {
-        const localUser: User = {
-          id: profile.id,
-          name: profile.name,
-          email: profile.email,
-          phone: profile.phone,
-          euroPoints: profile.euroPoints,
-        };
+        const localUser: User = { id: profile.id, name: profile.name, email: profile.email, phone: profile.phone, euroPoints: profile.euroPoints };
         saveUser(localUser);
         toast.success('Регистрация успешна!');
         await finalizeOrder(localUser);
       }
-    } catch {
-      toast.error('Ошибка регистрации');
-    } finally {
-      setSubmitting(false);
-    }
+    } catch { toast.error('Ошибка регистрации'); }
+    finally { setSubmitting(false); }
   };
 
-  const submit = () => {
-    const currentUser = getUser();
-    if (!currentUser) {
-      setStep('register');
-      return;
-    }
-    finalizeOrder(currentUser);
-  };
+  const submit = () => { const u = getUser(); if (!u) { setStep('register'); return; } finalizeOrder(u); };
 
   const buildPaymentDetails = (): PaymentDetails | undefined => {
     if (paymentMethod === 'transfer') {
-      const banks = BANKS[bankRegion];
-      const bank = banks.find(b => b.id === selectedBank);
-      return {
-        bank: bank?.name || selectedBank,
-        cardNumber: bank?.card,
-        amount: grandTotal,
-        transferNote: `Перевод на ${bank?.name || 'банк'}`,
-      };
+      const bank = banks[bankRegion].find(b => b.id === selectedBank);
+      return { bank: bank?.name || selectedBank, cardNumber: bank?.card, amount: grandTotal, transferNote: `Перевод на ${bank?.name || 'банк'}` };
     }
-    if (paymentMethod === 'card') {
-      return { cardNumber: cardNumber || 'Тестовая оплата', amount: grandTotal };
-    }
-    if (paymentMethod === 'cash') {
-      return { amount: grandTotal, transferNote: 'Оплата наличными при получении' };
-    }
+    if (paymentMethod === 'cash') return { amount: grandTotal, transferNote: 'Оплата наличными при получении' };
+    if (paymentMethod === 'cod') return { amount: grandTotal, transferNote: `Наложенный платёж (+${codSurcharge} BYN)` };
+    if (paymentMethod === 'telegram_stars') return { amount: grandTotal, transferNote: 'Оплата звёздами Telegram' };
+    if (paymentMethod === 'crypto') return { amount: grandTotal, transferNote: 'Оплата криптовалютой' };
     return undefined;
   };
 
@@ -170,46 +137,26 @@ const OrderPage = () => {
     try {
       const pointsEarned = calculatePointsEarned(grandTotal);
       const order: Order = {
-        id: '',
-        trackNumber: generateTrackNumber(),
-        items,
-        totalWeight: roundBYN(totalWeight),
-        totalPriceBYN: roundBYN(totalPriceBYN),
-        totalServiceBYN: roundBYN(totalServiceBYN),
-        deliveryMethod,
-        deliveryCostBYN,
-        paymentMethod,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
+        id: '', trackNumber: generateTrackNumber(), items,
+        totalWeight: roundBYN(totalWeight), totalPriceBYN: roundBYN(totalPriceBYN),
+        totalServiceBYN: roundBYN(totalServiceBYN), deliveryMethod,
+        deliveryCostBYN: roundBYN(deliveryCostBYN + boxCostBYN), paymentMethod,
+        status: 'pending', createdAt: new Date().toISOString(),
         estimatedDelivery: new Date(Date.now() + 14 * 86400000).toISOString(),
         statusHistory: [{ status: 'pending', date: new Date().toISOString(), comment: 'Заказ создан' }],
-        pointsEarned,
-        profileId: orderUser.id,
-        paymentDetails: buildPaymentDetails(),
+        pointsEarned, profileId: orderUser.id, paymentDetails: buildPaymentDetails(),
       };
-
       const created = await createOrder(order, orderUser.id);
       if (created) {
         if (pointsEarned > 0) {
           await addEuroPointsDb(orderUser.id, pointsEarned);
-          // Update local
-          const u = getUser();
-          if (u) {
-            u.euroPoints = (u.euroPoints || 0) + pointsEarned;
-            saveUser(u);
-          }
+          const u = getUser(); if (u) { u.euroPoints = (u.euroPoints || 0) + pointsEarned; saveUser(u); }
         }
-        setCompletedOrder({ ...order, id: created.id });
-        setStep('done');
+        setCompletedOrder({ ...order, id: created.id }); setStep('done');
         toast.success('Заказ успешно оформлен!');
-      } else {
-        toast.error('Ошибка при создании заказа');
-      }
-    } catch {
-      toast.error('Ошибка при создании заказа');
-    } finally {
-      setSubmitting(false);
-    }
+      } else toast.error('Ошибка при создании заказа');
+    } catch { toast.error('Ошибка при создании заказа'); }
+    finally { setSubmitting(false); }
   };
 
   const goBack = () => {
@@ -222,11 +169,11 @@ const OrderPage = () => {
 
   const progressSteps = ['Товары', 'Доставка', 'Оплата'];
   const progressIdx = step === 'item' || step === 'confirm_more' ? 0 : step === 'delivery' ? 1 : 2;
-
   const inputClass = "glass border-glow bg-transparent h-11 rounded-xl";
+  const selectedBankInfo = banks[bankRegion].find(b => b.id === selectedBank);
 
-  // Payment details step for transfer
-  const selectedBankInfo = BANKS[bankRegion].find(b => b.id === selectedBank);
+  // Filter payment methods - COD only for europost
+  const availablePayments = PAYMENT_METHODS_V2.filter(pm => !pm.europostOnly || deliveryMethod === 'europost');
 
   if (step === 'done' && completedOrder) {
     return (
@@ -237,18 +184,14 @@ const OrderPage = () => {
           </div>
           <h1 className="text-2xl font-display font-bold mb-2">Заказ оформлен!</h1>
           <p className="text-sm text-muted-foreground mb-6">Ваш трек-номер для отслеживания</p>
-          
           <div className="glass rounded-2xl p-6 border-glow shadow-glow mb-6">
             <p className="text-xs text-muted-foreground mb-2">Трек-номер</p>
             <div className="flex items-center justify-center gap-3">
               <span className="text-2xl font-display font-bold text-gradient tracking-wider">{completedOrder.trackNumber}</span>
-              <button onClick={() => { navigator.clipboard.writeText(completedOrder.trackNumber); toast.success('Трек-номер скопирован!'); }}
-                className="p-2 rounded-lg glass hover:border-glow transition-all">
-                <Copy size={16} className="text-muted-foreground" />
-              </button>
+              <button onClick={() => { navigator.clipboard.writeText(completedOrder.trackNumber); toast.success('Скопирован!'); }}
+                className="p-2 rounded-lg glass hover:border-glow transition-all"><Copy size={16} className="text-muted-foreground" /></button>
             </div>
           </div>
-
           {completedOrder.pointsEarned && completedOrder.pointsEarned > 0 && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
               className="glass rounded-2xl p-4 border-glow mb-6">
@@ -259,8 +202,6 @@ const OrderPage = () => {
               <p className="text-[10px] text-muted-foreground mt-1">Начислено на ваш счёт</p>
             </motion.div>
           )}
-
-          {/* Payment info */}
           {completedOrder.paymentDetails && (
             <div className="glass rounded-2xl p-5 border-glow text-left mb-6">
               <h3 className="font-display font-bold text-sm mb-3 flex items-center gap-2">
@@ -275,19 +216,14 @@ const OrderPage = () => {
                   <div className="flex justify-between"><span className="text-muted-foreground">Сумма</span><span className="font-bold text-gradient">{grandTotal} BYN</span></div>
                 </div>
               )}
-              {completedOrder.paymentMethod === 'cash' && (
-                <p className="text-sm text-muted-foreground">Оплата наличными при получении. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>
-              )}
-              {completedOrder.paymentMethod === 'card' && (
-                <p className="text-sm text-muted-foreground">Тестовый режим. Оплата будет подтверждена менеджером. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>
-              )}
+              {completedOrder.paymentMethod === 'cash' && <p className="text-sm text-muted-foreground">Оплата наличными. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>}
+              {completedOrder.paymentMethod === 'cod' && <p className="text-sm text-muted-foreground">Наложенный платёж. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>}
+              {completedOrder.paymentMethod === 'telegram_stars' && <p className="text-sm text-muted-foreground">Оплата звёздами Telegram. Менеджер свяжется для уточнения. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>}
+              {completedOrder.paymentMethod === 'crypto' && <p className="text-sm text-muted-foreground">Оплата криптовалютой. Менеджер свяжется для уточнения. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>}
             </div>
           )}
-
           <div className="glass rounded-2xl p-5 border-glow text-left mb-6">
-            <h3 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
-              <ShoppingBag size={18} className="text-primary" /> Сводка заказа
-            </h3>
+            <h3 className="font-display font-bold text-lg mb-3 flex items-center gap-2"><ShoppingBag size={18} className="text-primary" /> Сводка заказа</h3>
             <div className="space-y-2 mb-4">
               {completedOrder.items.map((item, idx) => (
                 <div key={idx} className="glass rounded-xl p-3">
@@ -300,16 +236,16 @@ const OrderPage = () => {
               ))}
             </div>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Стоимость товаров</span><span className="font-medium">{completedOrder.totalPriceBYN} BYN</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Сервисный сбор</span><span className="font-medium">{completedOrder.totalServiceBYN} BYN</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Доставка</span><span className="font-medium">{completedOrder.deliveryCostBYN > 0 ? `${completedOrder.deliveryCostBYN} BYN` : 'Бесплатно'}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Товары</span><span>{roundBYN(completedOrder.totalPriceBYN)} BYN</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Сервис</span><span>{roundBYN(completedOrder.totalServiceBYN)} BYN</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Доставка</span><span>{completedOrder.deliveryCostBYN > 0 ? `${completedOrder.deliveryCostBYN} BYN` : 'Бесплатно'}</span></div>
+              {codSurcharge > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Наложенный платёж</span><span>{codSurcharge} BYN</span></div>}
               <div className="border-t border-border pt-2 flex justify-between">
-                <span className="font-semibold">Итого (примерно)</span>
-                <span className="text-lg font-display font-bold text-gradient">{roundBYN(completedOrder.totalPriceBYN + completedOrder.totalServiceBYN + completedOrder.deliveryCostBYN)} BYN</span>
+                <span className="font-semibold">Итого</span>
+                <span className="text-lg font-display font-bold text-gradient">{grandTotal} BYN</span>
               </div>
             </div>
           </div>
-
           <div className="flex gap-3">
             <Button onClick={() => navigate('/profile')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">Мои заказы</Button>
             <Button variant="outline" onClick={() => navigate('/')} className="flex-1 glass border-glow h-12 rounded-xl">На главную</Button>
@@ -326,23 +262,17 @@ const OrderPage = () => {
           <RefreshCw size={12} className="animate-spin" /> Загрузка курсов валют...
         </div>
       )}
-
-      {/* Progress */}
       {step !== 'register' && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
           {progressSteps.map((s, i) => (
             <div key={s} className="flex items-center">
               <div className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-500 ${
-                  i <= progressIdx ? 'gradient-primary text-primary-foreground glow-primary' : 'glass text-muted-foreground'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-500 ${i <= progressIdx ? 'gradient-primary text-primary-foreground glow-primary' : 'glass text-muted-foreground'}`}>
                   {i < progressIdx ? <Check size={16} /> : i + 1}
                 </div>
                 <span className={`text-[10px] mt-1.5 font-medium ${i === progressIdx ? 'text-foreground' : 'text-muted-foreground'}`}>{s}</span>
               </div>
-              {i < progressSteps.length - 1 && (
-                <div className={`w-8 h-0.5 mx-1 mt-[-14px] rounded-full transition-colors duration-500 ${i < progressIdx ? 'bg-primary' : 'bg-border'}`} />
-              )}
+              {i < progressSteps.length - 1 && <div className={`w-8 h-0.5 mx-1 mt-[-14px] rounded-full transition-colors duration-500 ${i < progressIdx ? 'bg-primary' : 'bg-border'}`} />}
             </div>
           ))}
         </motion.div>
@@ -350,6 +280,7 @@ const OrderPage = () => {
 
       <AnimatePresence mode="wait">
         <motion.div key={step} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }} className="min-h-[320px]">
+
           {/* ITEM STEP */}
           {step === 'item' && (
             <div className="space-y-4">
@@ -453,14 +384,113 @@ const OrderPage = () => {
             <div className="space-y-4">
               <h2 className="text-2xl font-display font-bold">Способ доставки</h2>
               <div className="space-y-3">
-                {DELIVERY_METHODS.map(d => (
-                  <button key={d.id} onClick={() => setDeliveryMethod(d.id)}
+                {DELIVERY_METHODS_V2.map(d => (
+                  <button key={d.id} onClick={() => { setDeliveryMethod(d.id); if (d.id !== 'europost') { setSelectedBox(''); } }}
                     className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300 ${deliveryMethod === d.id ? 'glass border-glow shadow-glow' : 'glass hover:border-glow'}`}>
-                    <div className="text-left"><div className="font-medium text-sm">{d.name}</div><div className="text-[11px] text-muted-foreground">{d.desc}</div></div>
-                    <span className={`font-display font-bold ${deliveryMethod === d.id ? 'text-gradient' : 'text-muted-foreground'}`}>{d.priceBYN > 0 ? `${d.priceBYN} BYN` : 'Бесплатно'}</span>
+                    <div className="text-left">
+                      <div className="font-medium text-sm">{d.name}</div>
+                      <div className="text-[11px] text-muted-foreground">{d.desc}</div>
+                    </div>
+                    <span className={`font-display font-bold text-sm ${deliveryMethod === d.id ? 'text-gradient' : 'text-muted-foreground'}`}>
+                      {getDeliveryLabel(d.id, totalWeight)}
+                    </span>
                   </button>
                 ))}
               </div>
+
+              {/* Europost weight tiers info */}
+              {deliveryMethod === 'europost' && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 border-glow space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Info size={14} className="text-primary" /> Тарифы Европочты</h3>
+                  <div className="grid grid-cols-2 gap-1.5 text-xs">
+                    {[
+                      { range: '0.01 – 1 кг', price: '5.6 BYN' },
+                      { range: '1.01 – 2 кг', price: '6.4 BYN' },
+                      { range: '2.01 – 5 кг', price: '7.4 BYN' },
+                      { range: '5.01 – 10 кг', price: '11 BYN' },
+                      { range: '10.01 – 15 кг', price: '16.5 BYN' },
+                      { range: '15.01 – 20 кг', price: '22 BYN' },
+                      { range: '20.01 – 25 кг', price: '27.3 BYN' },
+                    ].map(t => (
+                      <div key={t.range} className="flex justify-between glass rounded-lg p-2">
+                        <span className="text-muted-foreground">{t.range}</span>
+                        <span className="font-medium">{t.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {totalWeight > 0 && (
+                    <div className="glass rounded-lg p-3 text-center border-glow">
+                      <p className="text-xs text-muted-foreground">Ваш вес: {roundBYN(totalWeight)} кг</p>
+                      <p className="text-lg font-display font-bold text-gradient">{getDeliveryCost('europost', totalWeight)} BYN</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* CDEK individual notice */}
+              {deliveryMethod === 'sdek' && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 border-glow">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Info size={14} className="text-primary" />
+                    <p className="text-muted-foreground">Стоимость доставки СДЭК рассчитывается индивидуально в зависимости от места доставки. Менеджер уточнит стоимость.</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Packaging selector for Europost */}
+              {deliveryMethod === 'europost' && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Package size={14} className="text-primary" /> Упаковка (необязательно)</h3>
+                  {PACKAGING_OPTIONS.map(category => (
+                    <div key={category.name} className="glass rounded-xl overflow-hidden border-glow">
+                      <button onClick={() => setExpandedBoxCategory(expandedBoxCategory === category.name ? null : category.name)}
+                        className="w-full flex items-center justify-between p-3 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{category.icon}</span>
+                          <span className="text-sm font-medium">{category.name}</span>
+                          <span className="text-[10px] text-muted-foreground">({category.items.length})</span>
+                        </div>
+                        <motion.div animate={{ rotate: expandedBoxCategory === category.name ? 180 : 0 }}>
+                          <ArrowRight size={14} className="text-muted-foreground rotate-90" />
+                        </motion.div>
+                      </button>
+                      <AnimatePresence>
+                        {expandedBoxCategory === category.name && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                            <div className="px-3 pb-3 space-y-1.5">
+                              {category.items.map(box => (
+                                <button key={box.id} onClick={() => setSelectedBox(selectedBox === box.id ? '' : box.id)}
+                                  className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-all ${selectedBox === box.id ? 'glass border-glow shadow-glow' : 'hover:bg-muted/30'}`}>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium truncate">{box.name}</p>
+                                    <p className="text-[10px] text-muted-foreground">{box.size}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2 ml-2">
+                                    <span className={`text-xs font-bold ${selectedBox === box.id ? 'text-gradient' : 'text-muted-foreground'}`}>{box.price.toFixed(2)} BYN</span>
+                                    {selectedBox === box.id && <Check size={14} className="text-primary" />}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
+                  {selectedBoxInfo && (
+                    <div className="glass rounded-lg p-3 border-glow flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium">{selectedBoxInfo.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{selectedBoxInfo.size}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-gradient">{selectedBoxInfo.price.toFixed(2)} BYN</span>
+                        <button onClick={() => setSelectedBox('')} className="p-1 rounded hover:bg-destructive/10"><Trash2 size={12} className="text-destructive" /></button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </div>
           )}
 
@@ -469,13 +499,17 @@ const OrderPage = () => {
             <div className="space-y-4">
               <h2 className="text-2xl font-display font-bold">Способ оплаты</h2>
               <div className="space-y-3">
-                {PAYMENT_METHODS.map(pm => {
+                {availablePayments.map(pm => {
                   const PmIcon = PAYMENT_ICONS[pm.id] || Wallet;
                   return (
                     <button key={pm.id} onClick={() => setPaymentMethod(pm.id)}
                       className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${paymentMethod === pm.id ? 'glass border-glow shadow-glow' : 'glass hover:border-glow'}`}>
                       <PmIcon size={20} className={paymentMethod === pm.id ? 'text-primary' : 'text-muted-foreground'} />
-                      <span className="font-medium text-sm">{pm.name}</span>
+                      <div className="text-left flex-1">
+                        <span className="font-medium text-sm">{pm.name}</span>
+                        {pm.desc && <p className="text-[10px] text-muted-foreground">{pm.desc}</p>}
+                      </div>
+                      {paymentMethod === pm.id && <Check size={16} className="text-primary" />}
                     </button>
                   );
                 })}
@@ -497,13 +531,18 @@ const OrderPage = () => {
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-muted-foreground">Товары</span><span>{roundBYN(totalPriceBYN)} BYN</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Сервис</span><span>{roundBYN(totalServiceBYN)} BYN</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Доставка ({dm.name})</span><span>{deliveryCostBYN > 0 ? `${deliveryCostBYN} BYN` : 'Бесплатно'}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Сервис (22%)</span><span>{roundBYN(totalServiceBYN)} BYN</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Доставка ({DELIVERY_METHODS_V2.find(d => d.id === deliveryMethod)?.name})</span>
+                    <span>{deliveryCostBYN > 0 ? `${roundBYN(deliveryCostBYN)} BYN` : deliveryMethod === 'sdek' ? 'Индивидуально' : 'Бесплатно'}</span>
+                  </div>
+                  {boxCostBYN > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Упаковка</span><span>{boxCostBYN.toFixed(2)} BYN</span></div>}
+                  {codSurcharge > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Наложенный платёж (+1.5%)</span><span>{codSurcharge} BYN</span></div>}
                   <div className="border-t border-border pt-3 flex justify-between items-center">
                     <span className="font-semibold">Итого</span>
                     <span className="text-xl font-display font-bold text-gradient">{grandTotal} BYN</span>
                   </div>
-                  {grandTotal >= 50 && (
+                  {grandTotal >= 10 && (
                     <p className="text-[10px] text-yellow-400 flex items-center gap-1"><Coins size={10} /> +{calculatePointsEarned(grandTotal)} ЕвроБалл(ов)</p>
                   )}
                 </div>
@@ -532,13 +571,11 @@ const OrderPage = () => {
                   <div>
                     <Label className="text-xs mb-2 block text-muted-foreground">Выберите банк</Label>
                     <div className="space-y-2">
-                      {BANKS[bankRegion].map(bank => (
+                      {banks[bankRegion].map(bank => (
                         <button key={bank.id} onClick={() => setSelectedBank(bank.id)}
                           className={`w-full flex items-center gap-3 p-3.5 rounded-xl transition-all ${selectedBank === bank.id ? 'glass border-glow shadow-glow' : 'glass hover:border-glow'}`}>
                           <Building2 size={18} className={selectedBank === bank.id ? 'text-primary' : 'text-muted-foreground'} />
-                          <div className="text-left flex-1">
-                            <p className="text-sm font-medium">{bank.name}</p>
-                          </div>
+                          <p className="text-sm font-medium flex-1 text-left">{bank.name}</p>
                           {selectedBank === bank.id && <Check size={16} className="text-primary" />}
                         </button>
                       ))}
@@ -555,52 +592,58 @@ const OrderPage = () => {
                           <div className="flex items-center justify-between">
                             <span className="font-mono font-bold text-sm">{showCard ? selectedBankInfo.card : '•••• •••• •••• ' + selectedBankInfo.card.slice(-4)}</span>
                             <div className="flex gap-1.5">
-                              <button onClick={() => setShowCard(!showCard)} className="p-1.5 rounded-lg glass hover:border-glow">
-                                {showCard ? <EyeOff size={12} /> : <Eye size={12} />}
-                              </button>
-                              <button onClick={() => { navigator.clipboard.writeText(selectedBankInfo.card.replace(/\s/g, '')); toast.success('Номер скопирован!'); }}
+                              <button onClick={() => setShowCard(!showCard)} className="p-1.5 rounded-lg glass hover:border-glow">{showCard ? <EyeOff size={12} /> : <Eye size={12} />}</button>
+                              <button onClick={() => { navigator.clipboard.writeText(selectedBankInfo.card.replace(/\s/g, '')); toast.success('Скопирован!'); }}
                                 className="p-1.5 rounded-lg glass hover:border-glow"><Copy size={12} /></button>
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Сумма к переводу</span><span className="font-display font-bold text-gradient">{grandTotal} BYN</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Сумма</span><span className="font-display font-bold text-gradient">{grandTotal} BYN</span></div>
                       </div>
                     </motion.div>
                   )}
                 </div>
               )}
 
-              {paymentMethod === 'card' && (
-                <div className="space-y-4">
-                  <div className="glass rounded-2xl p-5 border-glow">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CreditCard size={18} className="text-primary" />
-                      <h3 className="font-display font-bold text-sm">Тестовый режим</h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-4">Оплата картой доступна в тестовом режиме. Средства не будут списаны.</p>
-                    <div>
-                      <Label className="text-xs mb-1.5 block text-muted-foreground">Номер карты</Label>
-                      <Input placeholder="4242 4242 4242 4242" value={cardNumber} onChange={e => setCardNumber(e.target.value)} className={inputClass} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                      <div><Label className="text-xs mb-1.5 block text-muted-foreground">Срок</Label><Input placeholder="12/28" className={inputClass} /></div>
-                      <div><Label className="text-xs mb-1.5 block text-muted-foreground">CVC</Label><Input placeholder="123" className={inputClass} /></div>
-                    </div>
-                    <div className="mt-4 glass rounded-xl p-3 border-glow text-center">
-                      <p className="text-xs text-muted-foreground">К оплате</p>
-                      <p className="text-xl font-display font-bold text-gradient">{grandTotal} BYN</p>
-                    </div>
+              {paymentMethod === 'cash' && (
+                <div className="glass rounded-2xl p-5 border-glow shadow-glow">
+                  <div className="flex items-center gap-2 mb-3"><Wallet size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Оплата наличными</h3></div>
+                  <p className="text-xs text-muted-foreground mb-3">Оплата при получении заказа. Подготовьте точную сумму.</p>
+                  <div className="glass rounded-xl p-4 border-glow text-center">
+                    <p className="text-xs text-muted-foreground">Сумма к оплате</p>
+                    <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
                   </div>
                 </div>
               )}
 
-              {paymentMethod === 'cash' && (
+              {paymentMethod === 'cod' && (
                 <div className="glass rounded-2xl p-5 border-glow shadow-glow">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Wallet size={18} className="text-primary" />
-                    <h3 className="font-display font-bold text-sm">Оплата наличными</h3>
+                  <div className="flex items-center gap-2 mb-3"><Package size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Наложенный платёж</h3></div>
+                  <p className="text-xs text-muted-foreground mb-3">Оплата при получении через Европочту. К стоимости добавляется +1.5%.</p>
+                  <div className="glass rounded-xl p-4 border-glow text-center space-y-1">
+                    <p className="text-xs text-muted-foreground">Комиссия наложенного платежа</p>
+                    <p className="text-sm font-medium">{codSurcharge} BYN</p>
+                    <p className="text-xs text-muted-foreground">Итого к оплате</p>
+                    <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">Оплата при получении заказа. Подготовьте точную сумму.</p>
+                </div>
+              )}
+
+              {paymentMethod === 'telegram_stars' && (
+                <div className="glass rounded-2xl p-5 border-glow shadow-glow">
+                  <div className="flex items-center gap-2 mb-3"><Star size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Звёзды Telegram</h3></div>
+                  <p className="text-xs text-muted-foreground mb-3">Менеджер свяжется с вами для уточнения деталей оплаты звёздами Telegram.</p>
+                  <div className="glass rounded-xl p-4 border-glow text-center">
+                    <p className="text-xs text-muted-foreground">Сумма к оплате</p>
+                    <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === 'crypto' && (
+                <div className="glass rounded-2xl p-5 border-glow shadow-glow">
+                  <div className="flex items-center gap-2 mb-3"><Bitcoin size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Криптовалюта</h3></div>
+                  <p className="text-xs text-muted-foreground mb-3">Менеджер свяжется с вами для уточнения адреса кошелька и криптовалюты для оплаты.</p>
                   <div className="glass rounded-xl p-4 border-glow text-center">
                     <p className="text-xs text-muted-foreground">Сумма к оплате</p>
                     <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
@@ -620,59 +663,48 @@ const OrderPage = () => {
                 <h2 className="text-2xl font-display font-bold">Почти готово!</h2>
                 <p className="text-sm text-muted-foreground mt-1">Заполните данные для оформления</p>
               </div>
-              <div>
-                <Label className="text-xs mb-1.5 block text-muted-foreground">Ваше имя</Label>
-                <Input placeholder="Иван Иванов" value={regForm.name} onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))} className={inputClass} />
-              </div>
-              <div>
-                <Label className="text-xs mb-1.5 block text-muted-foreground">Телефон</Label>
-                <Input type="tel" placeholder="+375 29 123 45 67" value={regForm.phone} onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))} className={inputClass} />
-              </div>
-              <div>
-                <Label className="text-xs mb-1.5 block text-muted-foreground">Email</Label>
-                <Input type="email" placeholder="email@example.com" value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))} className={inputClass} />
-              </div>
+              <div><Label className="text-xs mb-1.5 block text-muted-foreground">Ваше имя</Label><Input placeholder="Иван Иванов" value={regForm.name} onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))} className={inputClass} /></div>
+              <div><Label className="text-xs mb-1.5 block text-muted-foreground">Телефон</Label><Input type="tel" placeholder="+375..." value={regForm.phone} onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))} className={inputClass} /></div>
+              <div><Label className="text-xs mb-1.5 block text-muted-foreground">Email</Label><Input type="email" placeholder="email@example.com" value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))} className={inputClass} /></div>
             </div>
           )}
         </motion.div>
       </AnimatePresence>
 
-      {/* Telegram note */}
-      {step !== 'done' && step !== 'register' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6 glass rounded-xl p-4 border-glow text-center">
-          <p className="text-xs text-muted-foreground mb-1">Нужна помощь?</p>
-          <a href="https://t.me/kirillmr" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.492-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-            Написать @kirillmr
-          </a>
-        </motion.div>
-      )}
-
-      {/* Nav buttons */}
-      {step !== 'done' && step !== 'confirm_more' && (
-        <div className="flex gap-3 mt-6">
+      {/* Bottom buttons */}
+      {step !== 'done' && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex gap-3 mt-6">
           {step !== 'item' && (
-            <Button variant="outline" onClick={goBack} className="flex-1 glass border-glow h-12 rounded-xl"><ArrowLeft size={16} className="mr-1.5" /> Назад</Button>
+            <Button variant="outline" onClick={goBack} className="glass border-glow h-12 rounded-xl"><ArrowLeft size={16} /></Button>
           )}
-          {step === 'item' ? (
-            <Button onClick={addItem} disabled={!canAddItem()} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 disabled:opacity-40">
-              {items.length > 0 ? 'Добавить товар' : 'Далее'} <ArrowRight size={16} className="ml-1.5" />
+          {step === 'item' && (
+            <Button disabled={!canAddItem()} onClick={addItem} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 disabled:opacity-40">
+              Добавить товар <ArrowRight size={16} className="ml-1.5" />
             </Button>
-          ) : step === 'delivery' ? (
-            <Button onClick={() => setStep('payment')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">Далее <ArrowRight size={16} className="ml-1.5" /></Button>
-          ) : step === 'payment' ? (
-            <Button onClick={() => setStep('payment_details')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">Далее <ArrowRight size={16} className="ml-1.5" /></Button>
-          ) : step === 'payment_details' ? (
+          )}
+          {step === 'delivery' && (
+            <Button onClick={() => setStep('payment')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
+              Далее <ArrowRight size={16} className="ml-1.5" />
+            </Button>
+          )}
+          {step === 'payment' && (
+            <Button onClick={() => setStep('payment_details')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
+              Далее <ArrowRight size={16} className="ml-1.5" />
+            </Button>
+          )}
+          {step === 'payment_details' && (
             <Button onClick={submit} disabled={submitting || (paymentMethod === 'transfer' && !selectedBank)}
               className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 disabled:opacity-40">
-              {submitting ? 'Оформление...' : 'Оформить заказ'} <Check size={16} className="ml-1.5" />
+              {submitting ? 'Оформляем...' : 'Оформить заказ'} <Check size={16} className="ml-1.5" />
             </Button>
-          ) : step === 'register' ? (
-            <Button onClick={handleRegister} disabled={submitting} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
+          )}
+          {step === 'register' && (
+            <Button onClick={handleRegister} disabled={submitting}
+              className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
               {submitting ? 'Регистрация...' : 'Зарегистрироваться и оформить'} <Check size={16} className="ml-1.5" />
             </Button>
-          ) : null}
-        </div>
+          )}
+        </motion.div>
       )}
     </div>
   );

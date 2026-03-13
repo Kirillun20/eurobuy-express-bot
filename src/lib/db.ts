@@ -263,3 +263,32 @@ export async function getAllChatSessions(): Promise<{ sessionId: string; lastMes
   }
   return Array.from(sessions.entries()).map(([sessionId, info]) => ({ sessionId, ...info }));
 }
+
+// =================== SITE SETTINGS ===================
+
+export async function getSetting(key: string): Promise<any> {
+  const { data } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', key)
+    .single();
+  return data?.value || null;
+}
+
+export async function updateSetting(key: string, value: any): Promise<void> {
+  const { data: existing } = await supabase
+    .from('site_settings')
+    .select('id')
+    .eq('key', key)
+    .single();
+  if (existing) {
+    await supabase.from('site_settings').update({ value, updated_at: new Date().toISOString() }).eq('key', key);
+  } else {
+    await supabase.from('site_settings').insert({ key, value });
+  }
+}
+
+export async function getBankRequisites(): Promise<{ by: { id: string; name: string; card: string }[]; ru: { id: string; name: string; card: string }[] } | null> {
+  const value = await getSetting('bank_requisites');
+  return value as any;
+}
