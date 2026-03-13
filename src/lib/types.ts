@@ -141,10 +141,11 @@ export const MAX_PRICE_EUR = 500;
  */
 export function getWeightPriceUSD(weightKg: number): number {
   if (weightKg <= 0) return 0;
-  if (weightKg <= 0.5) return 6;
-  if (weightKg <= 1) return 8;
-  const extraKg = Math.ceil(weightKg - 1);
-  return 8 + extraKg * 4;
+  if (weightKg <= 0.5) return 8;
+  if (weightKg <= 1) return 10;
+  if (weightKg <= 2) return 15;
+  const extraKg = Math.ceil(weightKg - 2);
+  return 15 + extraKg * 5;
 }
 
 /**
