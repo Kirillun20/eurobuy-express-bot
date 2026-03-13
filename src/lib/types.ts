@@ -154,7 +154,7 @@ export function getWeightPriceUSD(weightKg: number): number {
  * Take the higher one.
  */
 export function calculateServiceCostBYN(priceBYN: number, weightKg: number): number {
-  const percentCost = priceBYN * 0.18;
+  const percentCost = priceBYN * 0.22;
   const weightCostUSD = getWeightPriceUSD(weightKg);
   const weightCostBYN = weightCostUSD * EXCHANGE_RATES_TO_BYN['USD'];
   return Math.max(percentCost, weightCostBYN);
