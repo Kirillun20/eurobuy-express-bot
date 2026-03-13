@@ -120,14 +120,16 @@ export const DELIVERY_METHODS = [
   { id: 'courier_minsk', name: 'Курьером по Минску', desc: '1-2 дня', priceBYN: 10 },
   { id: 'pickup_minsk', name: 'Самовывоз (Минск)', desc: 'После получения', priceBYN: 0 },
   { id: 'pickup_moscow', name: 'Самовывоз (Москва)', desc: 'После получения', priceBYN: 0 },
-  { id: 'sdek', name: 'СДЭК', desc: '3-7 дней', priceBYN: 15 },
-  { id: 'europost', name: 'Европочта', desc: '5-10 дней', priceBYN: 10 },
+  { id: 'europost', name: 'Европочта', desc: '5-10 дней', priceBYN: 0 },
+  { id: 'sdek', name: 'СДЭК', desc: '3-7 дней', priceBYN: 0 },
 ];
 
 export const PAYMENT_METHODS = [
-  { id: 'card', name: 'Банковская карта' },
   { id: 'cash', name: 'Наличные' },
-  { id: 'transfer', name: 'Банковский перевод' },
+  { id: 'transfer', name: 'Перевод на карту' },
+  { id: 'cod', name: 'Наложенный платёж (+1.5%)' },
+  { id: 'telegram_stars', name: 'Звёзды Telegram' },
+  { id: 'crypto', name: 'Криптовалюта' },
 ];
 
 export const MAX_WEIGHT_KG = 25;
