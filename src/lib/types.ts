@@ -120,14 +120,16 @@ export const DELIVERY_METHODS = [
   { id: 'courier_minsk', name: 'Курьером по Минску', desc: '1-2 дня', priceBYN: 10 },
   { id: 'pickup_minsk', name: 'Самовывоз (Минск)', desc: 'После получения', priceBYN: 0 },
   { id: 'pickup_moscow', name: 'Самовывоз (Москва)', desc: 'После получения', priceBYN: 0 },
-  { id: 'sdek', name: 'СДЭК', desc: '3-7 дней', priceBYN: 15 },
-  { id: 'europost', name: 'Европочта', desc: '5-10 дней', priceBYN: 10 },
+  { id: 'europost', name: 'Европочта', desc: '5-10 дней', priceBYN: 0 },
+  { id: 'sdek', name: 'СДЭК', desc: '3-7 дней', priceBYN: 0 },
 ];
 
 export const PAYMENT_METHODS = [
-  { id: 'card', name: 'Банковская карта' },
   { id: 'cash', name: 'Наличные' },
-  { id: 'transfer', name: 'Банковский перевод' },
+  { id: 'transfer', name: 'Перевод на карту' },
+  { id: 'cod', name: 'Наложенный платёж (+1.5%)' },
+  { id: 'telegram_stars', name: 'Звёзды Telegram' },
+  { id: 'crypto', name: 'Криптовалюта' },
 ];
 
 export const MAX_WEIGHT_KG = 25;
@@ -139,10 +141,11 @@ export const MAX_PRICE_EUR = 500;
  */
 export function getWeightPriceUSD(weightKg: number): number {
   if (weightKg <= 0) return 0;
-  if (weightKg <= 0.5) return 6;
-  if (weightKg <= 1) return 8;
-  const extraKg = Math.ceil(weightKg - 1);
-  return 8 + extraKg * 4;
+  if (weightKg <= 0.5) return 8;
+  if (weightKg <= 1) return 10;
+  if (weightKg <= 2) return 15;
+  const extraKg = Math.ceil(weightKg - 2);
+  return 15 + extraKg * 5;
 }
 
 /**
@@ -151,7 +154,7 @@ export function getWeightPriceUSD(weightKg: number): number {
  * Take the higher one.
  */
 export function calculateServiceCostBYN(priceBYN: number, weightKg: number): number {
-  const percentCost = priceBYN * 0.18;
+  const percentCost = priceBYN * 0.22;
   const weightCostUSD = getWeightPriceUSD(weightKg);
   const weightCostBYN = weightCostUSD * EXCHANGE_RATES_TO_BYN['USD'];
   return Math.max(percentCost, weightCostBYN);
@@ -196,14 +199,14 @@ export interface EuroPointsReward {
 }
 
 export const EUROPOINTS_REWARDS: EuroPointsReward[] = [
-  { id: 'delivery_10', name: 'Скидка на доставку 10 BYN', description: 'Полная скидка на доставку курьером', cost: 1, type: 'delivery_discount', value: 10 },
-  { id: 'discount_2', name: 'Скидка 2%', description: 'На стоимость товаров', cost: 2, type: 'percent_discount', value: 2 },
-  { id: 'discount_3', name: 'Скидка 3%', description: 'На стоимость товаров', cost: 3, type: 'percent_discount', value: 3 },
-  { id: 'discount_5', name: 'Скидка 5%', description: 'На стоимость товаров', cost: 5, type: 'percent_discount', value: 5 },
-  { id: 'discount_10', name: 'Скидка 10%', description: 'На стоимость товаров', cost: 10, type: 'percent_discount', value: 10 },
+  { id: 'delivery_10', name: 'Скидка на доставку 10 BYN', description: 'Полная скидка на доставку курьером', cost: 3, type: 'delivery_discount', value: 10 },
+  { id: 'discount_2', name: 'Скидка 2%', description: 'На стоимость товаров', cost: 5, type: 'percent_discount', value: 2 },
+  { id: 'discount_3', name: 'Скидка 3%', description: 'На стоимость товаров', cost: 10, type: 'percent_discount', value: 3 },
+  { id: 'discount_5', name: 'Скидка 5%', description: 'На стоимость товаров', cost: 20, type: 'percent_discount', value: 5 },
+  { id: 'discount_10', name: 'Скидка 10%', description: 'На стоимость товаров', cost: 40, type: 'percent_discount', value: 10 },
 ];
 
-// Points earned per order: 1 point per 50 BYN spent
+// Points earned per order: 1 point per 10 BYN spent
 export function calculatePointsEarned(totalBYN: number): number {
-  return Math.floor(totalBYN / 50);
+  return Math.floor(totalBYN / 10);
 }
