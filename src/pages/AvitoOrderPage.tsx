@@ -28,8 +28,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const RUSSIAN_PLATFORMS = [
   { id: 'avito', name: 'Авито', icon: '🛒', desc: 'Крупнейшая площадка объявлений' },
-  { id: 'wildberries', name: 'Wildberries', icon: '🟣', desc: 'Маркетплейс одежды и товаров' },
-  { id: 'ozon', name: 'Ozon', icon: '🔵', desc: 'Универсальный маркетплейс' },
   { id: 'yandex_market', name: 'Яндекс Маркет', icon: '🟡', desc: 'Маркетплейс от Яндекса' },
   { id: 'other', name: 'Другая платформа', icon: '🌐', desc: 'Любой магазин или сервис РФ' },
 ];
