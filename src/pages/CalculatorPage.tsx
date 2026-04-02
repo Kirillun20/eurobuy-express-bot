@@ -9,7 +9,7 @@ import {
 } from '@/lib/types';
 import { DELIVERY_METHODS_V2, getDeliveryCost, getDeliveryLabel } from '@/lib/delivery-config';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import { Calculator, TrendingUp, AlertTriangle, Info, RefreshCw } from 'lucide-react';
+import { Calculator, TrendingUp, AlertTriangle, Info, RefreshCw, Package, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const CalculatorPage = () => {
