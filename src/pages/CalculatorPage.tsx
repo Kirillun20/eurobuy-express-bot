@@ -9,7 +9,7 @@ import {
 } from '@/lib/types';
 import { DELIVERY_METHODS_V2, getDeliveryCost, getDeliveryLabel } from '@/lib/delivery-config';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import { Calculator, TrendingUp, AlertTriangle, Info, RefreshCw } from 'lucide-react';
+import { Calculator, TrendingUp, AlertTriangle, Info, RefreshCw, Package, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const CalculatorPage = () => {
@@ -184,6 +184,21 @@ const CalculatorPage = () => {
             <p className="text-[10px] text-muted-foreground">* Точную сумму подтвердит менеджер</p>
           </motion.div>
         )}
+
+        {/* Delivery CTA */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          className="glass rounded-2xl p-5 border-glow text-center mt-4">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Package size={18} className="text-primary" />
+            <h3 className="font-display font-bold text-sm">Товар уже куплен?</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Нужна только доставка? Напишите нам в Telegram</p>
+          <a href="https://t.me/kirillmr" target="_blank" rel="noopener noreferrer">
+            <Button className="gradient-primary glow-primary text-primary-foreground font-semibold h-10 rounded-xl border-0 px-6">
+              <Send size={14} className="mr-2" /> Написать @kirillmr
+            </Button>
+          </a>
+        </motion.div>
       </motion.div>
     </div>
   );

@@ -176,7 +176,7 @@ const ProfilePage = () => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-muted-foreground">1 балл за каждые 50 BYN</p>
+            <p className="text-[10px] text-muted-foreground">1 балл за каждые 10 BYN</p>
           </div>
         </div>
       </motion.div>
