@@ -107,6 +107,69 @@ const HelpPage = () => {
           </div>
         </motion.div>
 
+        {/* Chat with support - moved to top for visibility */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-8">
+          <button onClick={() => setShowChat(!showChat)}
+            className="w-full glass rounded-2xl p-4 border-glow hover:shadow-glow transition-all flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center glow-primary">
+                <MessageCircle size={18} className="text-primary-foreground" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-display font-bold text-sm">Чат с поддержкой</h3>
+                <p className="text-[10px] text-muted-foreground">Напишите нам — ответим быстро!</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-emerald-400 font-medium">Онлайн</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {showChat && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                <div className="glass rounded-2xl border-glow overflow-hidden">
+                  <div className="gradient-primary px-4 py-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                      <MessageCircle size={14} className="text-primary-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-primary-foreground">EuroBuy Support</p>
+                      <p className="text-[10px] text-primary-foreground/70">Обычно отвечаем в течение 5 минут</p>
+                    </div>
+                  </div>
+
+                  <div className="h-72 overflow-y-auto p-4 space-y-3">
+                    {loadingChat && <p className="text-xs text-muted-foreground text-center">Загрузка...</p>}
+                    {chatMessages.map((msg) => (
+                      <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
+                          msg.isUser ? 'gradient-primary text-primary-foreground rounded-br-md' : 'glass border-glow rounded-bl-md'
+                        }`}>
+                          {msg.isAdmin && <p className="text-[9px] font-semibold mb-0.5 opacity-70">Поддержка</p>}
+                          <p className="text-xs leading-relaxed">{msg.text}</p>
+                          <p className={`text-[9px] mt-1 ${msg.isUser ? 'text-primary-foreground/50' : 'text-muted-foreground'}`}>
+                            {new Date(msg.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <div className="p-3 border-t border-border flex gap-2">
+                    <Input placeholder="Введите сообщение..." value={chatInput} onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSend()} className="glass border-glow bg-transparent h-10 rounded-xl text-xs flex-1" />
+                    <Button onClick={handleSend} size="icon" className="gradient-primary text-primary-foreground h-10 w-10 rounded-xl border-0"><Send size={16} /></Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
         {/* How to order */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h2 className="text-lg font-display font-bold mb-4 flex items-center gap-2">
@@ -175,66 +238,6 @@ const HelpPage = () => {
               </div>
             ))}
           </div>
-        </motion.div>
-
-        {/* Chat with support */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-          <button onClick={() => setShowChat(!showChat)}
-            className="w-full glass rounded-2xl p-4 border-glow hover:shadow-glow transition-all flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center glow-primary">
-                <MessageCircle size={18} className="text-primary-foreground" />
-              </div>
-              <div className="text-left">
-                <h3 className="font-display font-bold text-sm">Чат с поддержкой</h3>
-                <p className="text-[10px] text-muted-foreground">Задайте вопрос онлайн</p>
-              </div>
-            </div>
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          </button>
-
-          <AnimatePresence>
-            {showChat && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                <div className="glass rounded-2xl border-glow overflow-hidden">
-                  <div className="gradient-primary px-4 py-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                      <MessageCircle size={14} className="text-primary-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-primary-foreground">EuroBuy Support</p>
-                      <p className="text-[10px] text-primary-foreground/70">Онлайн</p>
-                    </div>
-                  </div>
-
-                  <div className="h-64 overflow-y-auto p-4 space-y-3">
-                    {loadingChat && <p className="text-xs text-muted-foreground text-center">Загрузка...</p>}
-                    {chatMessages.map((msg) => (
-                      <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
-                          msg.isUser ? 'gradient-primary text-primary-foreground rounded-br-md' : 'glass border-glow rounded-bl-md'
-                        }`}>
-                          {msg.isAdmin && <p className="text-[9px] font-semibold mb-0.5 opacity-70">Поддержка</p>}
-                          <p className="text-xs leading-relaxed">{msg.text}</p>
-                          <p className={`text-[9px] mt-1 ${msg.isUser ? 'text-primary-foreground/50' : 'text-muted-foreground'}`}>
-                            {new Date(msg.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  <div className="p-3 border-t border-border flex gap-2">
-                    <Input placeholder="Введите сообщение..." value={chatInput} onChange={e => setChatInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleSend()} className="glass border-glow bg-transparent h-10 rounded-xl text-xs flex-1" />
-                    <Button onClick={handleSend} size="icon" className="gradient-primary text-primary-foreground h-10 w-10 rounded-xl border-0"><Send size={16} /></Button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
       </div>
     </div>
