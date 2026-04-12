@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { EXCHANGE_RATES_TO_BYN } from '@/lib/types';
+import { EXCHANGE_RATES_TO_BYN, getWeightPriceUSD } from '@/lib/types';
 
 export interface ExchangeRates {
   BYN: number;
@@ -10,7 +10,7 @@ export interface ExchangeRates {
 }
 
 const CACHE_KEY = 'eurobuy_rates';
-const CACHE_TTL = 600000; // 10 minutes (was 1 hour)
+const CACHE_TTL = 300000; // 5 minutes
 
 interface CachedRates {
   rates: ExchangeRates;
@@ -34,7 +34,7 @@ function setCachedRates(rates: ExchangeRates) {
 /**
  * Fetches live exchange rates from open.er-api.com
  * Returns rates as "1 unit of currency = X BYN"
- * Updates every 10 minutes
+ * Updates every 5 minutes
  */
 export function useExchangeRates() {
   const [rates, setRates] = useState<ExchangeRates>({
@@ -75,7 +75,7 @@ export function useExchangeRates() {
 
   useEffect(() => {
     fetchRates();
-    // Auto-refresh every 10 minutes
+    // Auto-refresh every 5 minutes
     const interval = setInterval(() => {
       localStorage.removeItem(CACHE_KEY);
       fetchRates();
@@ -92,5 +92,12 @@ export function useExchangeRates() {
     return rates.EUR > 0 ? amountBYN / rates.EUR : amountBYN / 3.55;
   };
 
-  return { rates, loading, convertToBYN, convertToEUR };
+  const calcServiceCostBYN = (priceBYN: number, weightKg: number): number => {
+    const percentCost = priceBYN * 0.22;
+    const weightCostUSD = getWeightPriceUSD(weightKg);
+    const weightCostBYN = weightCostUSD * rates.USD;
+    return Math.max(percentCost, weightCostBYN);
+  };
+
+  return { rates, loading, convertToBYN, convertToEUR, calcServiceCostBYN };
 }
