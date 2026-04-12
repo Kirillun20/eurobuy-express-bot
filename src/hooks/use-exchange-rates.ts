@@ -10,7 +10,7 @@ export interface ExchangeRates {
 }
 
 const CACHE_KEY = 'eurobuy_rates';
-const CACHE_TTL = 600000; // 10 minutes (was 1 hour)
+const CACHE_TTL = 300000; // 5 minutes
 
 interface CachedRates {
   rates: ExchangeRates;
@@ -92,5 +92,13 @@ export function useExchangeRates() {
     return rates.EUR > 0 ? amountBYN / rates.EUR : amountBYN / 3.55;
   };
 
-  return { rates, loading, convertToBYN, convertToEUR };
+  const calcServiceCostBYN = (priceBYN: number, weightKg: number): number => {
+    const percentCost = priceBYN * 0.22;
+    const { getWeightPriceUSD } = require('@/lib/types');
+    const weightCostUSD = getWeightPriceUSD(weightKg);
+    const weightCostBYN = weightCostUSD * rates.USD;
+    return Math.max(percentCost, weightCostBYN);
+  };
+
+  return { rates, loading, convertToBYN, convertToEUR, calcServiceCostBYN };
 }
