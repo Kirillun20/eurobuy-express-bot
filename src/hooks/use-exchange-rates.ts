@@ -10,31 +10,31 @@ export interface ExchangeRates {
 }
 
 const CACHE_KEY = 'eurobuy_rates';
-const CACHE_TTL = 300000; // 5 minutes
+const CACHE_TTL = 60_000; // 1 minute — fresh rates often
 
 interface CachedRates {
   rates: ExchangeRates;
   timestamp: number;
 }
 
-function getCachedRates(): ExchangeRates | null {
+function getCached(): CachedRates | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const cached: CachedRates = JSON.parse(raw);
-    if (Date.now() - cached.timestamp < CACHE_TTL) return cached.rates;
+    if (Date.now() - cached.timestamp < CACHE_TTL) return cached;
   } catch {}
   return null;
 }
 
-function setCachedRates(rates: ExchangeRates) {
+function setCached(rates: ExchangeRates) {
   localStorage.setItem(CACHE_KEY, JSON.stringify({ rates, timestamp: Date.now() }));
 }
 
 /**
  * Fetches live exchange rates from open.er-api.com
- * Returns rates as "1 unit of currency = X BYN"
- * Updates every 5 minutes
+ * Returns rates as "1 unit of currency = X BYN".
+ * Auto-refreshes every minute.
  */
 export function useExchangeRates() {
   const [rates, setRates] = useState<ExchangeRates>({
@@ -45,13 +45,17 @@ export function useExchangeRates() {
     RUB: EXCHANGE_RATES_TO_BYN['RUB'],
   });
   const [loading, setLoading] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
-  const fetchRates = () => {
-    const cached = getCachedRates();
-    if (cached) {
-      setRates(cached);
-      setLoading(false);
-      return;
+  const fetchRates = (force = false) => {
+    if (!force) {
+      const cached = getCached();
+      if (cached) {
+        setRates(cached.rates);
+        setUpdatedAt(cached.timestamp);
+        setLoading(false);
+        return;
+      }
     }
 
     fetch('https://open.er-api.com/v6/latest/BYN')
@@ -66,7 +70,8 @@ export function useExchangeRates() {
             RUB: data.rates.RUB ? 1 / data.rates.RUB : EXCHANGE_RATES_TO_BYN['RUB'],
           };
           setRates(toBYN);
-          setCachedRates(toBYN);
+          setCached(toBYN);
+          setUpdatedAt(Date.now());
         }
       })
       .catch(() => {})
@@ -75,11 +80,7 @@ export function useExchangeRates() {
 
   useEffect(() => {
     fetchRates();
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(() => {
-      localStorage.removeItem(CACHE_KEY);
-      fetchRates();
-    }, CACHE_TTL);
+    const interval = setInterval(() => fetchRates(true), CACHE_TTL);
     return () => clearInterval(interval);
   }, []);
 
@@ -99,5 +100,10 @@ export function useExchangeRates() {
     return Math.max(percentCost, weightCostBYN);
   };
 
-  return { rates, loading, convertToBYN, convertToEUR, calcServiceCostBYN };
+  const refresh = () => {
+    setLoading(true);
+    fetchRates(true);
+  };
+
+  return { rates, loading, updatedAt, refresh, convertToBYN, convertToEUR, calcServiceCostBYN };
 }
