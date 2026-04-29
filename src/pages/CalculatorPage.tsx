@@ -13,7 +13,26 @@ import { Calculator, TrendingUp, AlertTriangle, Info, RefreshCw, Package, Send }
 import { motion } from 'framer-motion';
 
 const CalculatorPage = () => {
-  const { rates, loading: ratesLoading, convertToBYN, convertToEUR } = useExchangeRates();
+  const { rates, loading: ratesLoading, updatedAt, refresh, convertToBYN, convertToEUR } = useExchangeRates();
+  const [, forceTick] = useState(0);
+  // Re-render every 15s so "обновлено N сек назад" stays accurate
+  useState(() => {
+    const id = setInterval(() => forceTick(t => t + 1), 15000);
+    return () => clearInterval(id);
+  });
+
+  const formatAgo = (ts: number | null) => {
+    if (!ts) return 'только что';
+    const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (sec < 60) return `${sec} сек назад`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} мин назад`;
+    const h = Math.floor(min / 60);
+    return `${h} ч назад`;
+  };
+  const updatedTime = updatedAt
+    ? new Date(updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : '—';
   const [weight, setWeight] = useState('');
   const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('EUR');
