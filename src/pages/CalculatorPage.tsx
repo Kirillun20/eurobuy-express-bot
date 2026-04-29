@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,26 @@ import { Calculator, TrendingUp, AlertTriangle, Info, RefreshCw, Package, Send }
 import { motion } from 'framer-motion';
 
 const CalculatorPage = () => {
-  const { rates, loading: ratesLoading, convertToBYN, convertToEUR } = useExchangeRates();
+  const { rates, loading: ratesLoading, updatedAt, refresh, convertToBYN, convertToEUR } = useExchangeRates();
+  const [, forceTick] = useState(0);
+  // Re-render every 15s so "обновлено N сек назад" stays accurate
+  useEffect(() => {
+    const id = setInterval(() => forceTick(t => t + 1), 15000);
+    return () => clearInterval(id);
+  }, []);
+
+  const formatAgo = (ts: number | null) => {
+    if (!ts) return 'только что';
+    const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (sec < 60) return `${sec} сек назад`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} мин назад`;
+    const h = Math.floor(min / 60);
+    return `${h} ч назад`;
+  };
+  const updatedTime = updatedAt
+    ? new Date(updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : '—';
   const [weight, setWeight] = useState('');
   const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('EUR');
@@ -78,9 +97,40 @@ const CalculatorPage = () => {
       )}
 
       {!ratesLoading && (
-        <div className="glass rounded-xl p-2.5 mb-4 border-glow text-[10px] text-muted-foreground flex items-center gap-1.5">
-          <Info size={10} />
-          Курс: 1 USD = {roundBYN(rates.USD)} BYN · 1 EUR = {roundBYN(rates.EUR)} BYN · 1 PLN = {roundBYN(rates.PLN)} BYN
+        <div className="glass rounded-2xl p-3 mb-4 border-glow space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground/90">
+              <TrendingUp size={12} className="text-primary" />
+              Актуальные курсы валют
+            </div>
+            <button
+              onClick={refresh}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+              title="Обновить курсы"
+            >
+              <RefreshCw size={10} className={ratesLoading ? 'animate-spin' : ''} />
+              Обновить
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { code: 'USD', val: rates.USD },
+              { code: 'EUR', val: rates.EUR },
+              { code: 'PLN', val: rates.PLN },
+            ].map(r => (
+              <div key={r.code} className="rounded-xl bg-primary/5 border border-primary/10 px-2 py-1.5 text-center">
+                <div className="text-[9px] text-muted-foreground uppercase tracking-wider">1 {r.code}</div>
+                <div className="text-xs font-bold text-foreground">{roundBYN(r.val)} BYN</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Обновлено в {updatedTime}
+            </span>
+            <span>{formatAgo(updatedAt)}</span>
+          </div>
         </div>
       )}
 
