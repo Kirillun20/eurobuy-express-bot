@@ -16,10 +16,10 @@ const CalculatorPage = () => {
   const { rates, loading: ratesLoading, updatedAt, refresh, convertToBYN, convertToEUR } = useExchangeRates();
   const [, forceTick] = useState(0);
   // Re-render every 15s so "обновлено N сек назад" stays accurate
-  useState(() => {
+  useEffect(() => {
     const id = setInterval(() => forceTick(t => t + 1), 15000);
     return () => clearInterval(id);
-  });
+  }, []);
 
   const formatAgo = (ts: number | null) => {
     if (!ts) return 'только что';
