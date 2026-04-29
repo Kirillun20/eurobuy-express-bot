@@ -111,34 +111,231 @@ const ProfilePage = () => {
     : orders;
 
   if (!user) {
+    const perks = [
+      { icon: Coins, title: 'ЕвроБаллы', text: '1 балл за каждые 10 BYN', color: 'from-yellow-500/20 to-amber-500/20', iconColor: 'text-yellow-400' },
+      { icon: Truck, title: 'Трекинг', text: 'Отслеживание заказов в реальном времени', color: 'from-blue-500/20 to-cyan-500/20', iconColor: 'text-blue-400' },
+      { icon: Gift, title: 'Скидки', text: 'Обменивай баллы на бонусы', color: 'from-pink-500/20 to-fuchsia-500/20', iconColor: 'text-pink-400' },
+    ];
+
     return (
-      <div className="px-4 py-6 pb-20 max-w-lg mx-auto">
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-glow-primary/10 blur-[100px] pointer-events-none" />
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary">
-            <UserIcon size={28} className="text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-display font-bold">{isLogin ? 'Вход' : 'Регистрация'}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{isLogin ? 'Войдите в личный кабинет' : 'Создайте аккаунт EuroBuy'}</p>
+      <div className="px-4 py-6 pb-24 max-w-lg mx-auto relative">
+        {/* Animated background glow */}
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full bg-primary/15 blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute top-32 right-0 w-[200px] h-[200px] rounded-full bg-accent/10 blur-[80px] pointer-events-none" />
+
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative text-center mb-6">
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="w-20 h-20 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary relative"
+          >
+            <UserIcon size={36} className="text-primary-foreground" />
+            <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
+              <Sparkles size={14} className="text-white" />
+            </div>
+          </motion.div>
+          <h1 className="text-3xl font-display font-bold text-gradient">EuroBuy</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            {isLogin ? 'С возвращением! Войдите в аккаунт' : 'Создайте аккаунт за 30 секунд'}
+          </p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative space-y-4">
-          {!isLogin && (
-            <div><Label className="text-xs mb-1.5 block text-muted-foreground">Имя</Label>
-            <Input placeholder="Ваше имя" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inputClass} /></div>
-          )}
-          <div><Label className="text-xs mb-1.5 block text-muted-foreground">Email</Label>
-          <Input type="email" placeholder="email@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inputClass} /></div>
-          {!isLogin && (
-            <div><Label className="text-xs mb-1.5 block text-muted-foreground">Телефон</Label>
-            <Input type="tel" placeholder="+375..." value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={inputClass} /></div>
-          )}
-          <div><Label className="text-xs mb-1.5 block text-muted-foreground">Пароль</Label>
-          <Input type="password" placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inputClass} /></div>
-          <Button onClick={handleAuth} disabled={loading} className="w-full gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
-            {loading ? 'Загрузка...' : isLogin ? 'Войти' : 'Зарегистрироваться'}
-          </Button>
-          <button onClick={() => setIsLogin(!isLogin)} className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-            {isLogin ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'}
+
+        {/* Tab switcher */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative glass rounded-2xl p-1.5 border-glow mb-5 flex"
+        >
+          {([
+            { id: true, label: 'Вход', icon: LogIn },
+            { id: false, label: 'Регистрация', icon: UserPlus },
+          ] as const).map(t => (
+            <button
+              key={String(t.id)}
+              onClick={() => setIsLogin(t.id)}
+              className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                isLogin === t.id ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {isLogin === t.id && (
+                <motion.div
+                  layoutId="auth-tab"
+                  className="absolute inset-0 gradient-primary rounded-xl glow-primary"
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                />
+              )}
+              <t.icon size={14} className="relative z-10" />
+              <span className="relative z-10">{t.label}</span>
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Form card */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isLogin ? 'login' : 'register'}
+            initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
+            transition={{ duration: 0.25 }}
+            className="relative glass rounded-2xl p-5 border-glow space-y-3.5 mb-5"
+          >
+            {!isLogin && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <UserIcon size={12} /> Как вас зовут?
+                </Label>
+                <div className="relative">
+                  <UserIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                  <Input
+                    placeholder="Иван Иванов"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Mail size={12} /> Email
+              </Label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                <Input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  className={`${inputClass} pl-10`}
+                />
+              </div>
+            </div>
+
+            {!isLogin && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <PhoneIcon size={12} /> Телефон
+                </Label>
+                <div className="relative">
+                  <PhoneIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                  <Input
+                    type="tel"
+                    placeholder="+375 29 ..."
+                    value={form.phone}
+                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                    className={`${inputClass} pl-10`}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Lock size={12} /> Пароль
+              </Label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  className={`${inputClass} pl-10 pr-10`}
+                  onKeyDown={e => e.key === 'Enter' && handleAuth()}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleAuth}
+              disabled={loading}
+              className="w-full gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 mt-2 group"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  Загрузка...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
+                  {isLogin ? 'Войти в аккаунт' : 'Создать аккаунт'}
+                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </span>
+              )}
+            </Button>
+
+            <p className="text-[10px] text-muted-foreground text-center pt-1">
+              {isLogin ? (
+                <>Нет аккаунта? <button onClick={() => setIsLogin(false)} className="text-primary hover:underline font-medium">Зарегистрируйтесь</button></>
+              ) : (
+                <>Регистрируясь, вы соглашаетесь с условиями сервиса</>
+              )}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Perks */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="space-y-2.5"
+        >
+          <p className="text-[11px] text-muted-foreground text-center uppercase tracking-wider mb-2 flex items-center justify-center gap-1.5">
+            <Star size={11} className="text-yellow-400 fill-yellow-400" />
+            Что вы получите
+            <Star size={11} className="text-yellow-400 fill-yellow-400" />
+          </p>
+          {perks.map((p, i) => (
+            <motion.div
+              key={p.title}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 + i * 0.08 }}
+              className="glass rounded-xl p-3 border-glow flex items-center gap-3 hover:scale-[1.02] transition-transform"
+            >
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${p.color} flex items-center justify-center flex-shrink-0`}>
+                <p.icon size={18} className={p.iconColor} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">{p.title}</p>
+                <p className="text-[11px] text-muted-foreground">{p.text}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Quick browse */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="mt-5 flex items-center justify-center gap-2"
+        >
+          <button
+            onClick={() => navigate('/calculator')}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 px-3 py-2 rounded-lg glass"
+          >
+            <Zap size={12} /> Калькулятор
+          </button>
+          <button
+            onClick={() => navigate('/about')}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 px-3 py-2 rounded-lg glass"
+          >
+            <Globe size={12} /> О сервисе
           </button>
         </motion.div>
       </div>
