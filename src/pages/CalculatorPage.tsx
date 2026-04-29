@@ -97,9 +97,40 @@ const CalculatorPage = () => {
       )}
 
       {!ratesLoading && (
-        <div className="glass rounded-xl p-2.5 mb-4 border-glow text-[10px] text-muted-foreground flex items-center gap-1.5">
-          <Info size={10} />
-          Курс: 1 USD = {roundBYN(rates.USD)} BYN · 1 EUR = {roundBYN(rates.EUR)} BYN · 1 PLN = {roundBYN(rates.PLN)} BYN
+        <div className="glass rounded-2xl p-3 mb-4 border-glow space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground/90">
+              <TrendingUp size={12} className="text-primary" />
+              Актуальные курсы валют
+            </div>
+            <button
+              onClick={refresh}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+              title="Обновить курсы"
+            >
+              <RefreshCw size={10} className={ratesLoading ? 'animate-spin' : ''} />
+              Обновить
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { code: 'USD', val: rates.USD },
+              { code: 'EUR', val: rates.EUR },
+              { code: 'PLN', val: rates.PLN },
+            ].map(r => (
+              <div key={r.code} className="rounded-xl bg-primary/5 border border-primary/10 px-2 py-1.5 text-center">
+                <div className="text-[9px] text-muted-foreground uppercase tracking-wider">1 {r.code}</div>
+                <div className="text-xs font-bold text-foreground">{roundBYN(r.val)} BYN</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1 border-t border-border/30">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Обновлено в {updatedTime}
+            </span>
+            <span>{formatAgo(updatedAt)}</span>
+          </div>
         </div>
       )}
 
