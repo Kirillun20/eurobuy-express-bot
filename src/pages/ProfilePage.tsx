@@ -40,6 +40,7 @@ const ProfilePage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [trackSearch, setTrackSearch] = useState('');
   const [activeTab, setActiveTab] = useState<ProfileTab>('orders');
