@@ -220,7 +220,7 @@ const HelpPage = () => {
           <div className="glass rounded-2xl p-5 border-glow shadow-glow space-y-4 mb-8">
             {[
               { icon: MessageCircle, label: 'Telegram', value: '@kirillmr', href: 'https://t.me/kirillmr', color: 'text-blue-400' },
-              { icon: Phone, label: 'Телефон', value: '+375 (29) 123-45-67', href: 'tel:+375291234567', color: 'text-emerald-400' },
+              { icon: Phone, label: 'Телефон', value: '+375 (29) 349-40-80', href: 'tel:+375293494080', color: 'text-emerald-400' },
               { icon: Mail, label: 'Email', value: 'support@eurobuy.by', href: 'mailto:support@eurobuy.by', color: 'text-purple-400' },
               { icon: MapPin, label: 'Адрес', value: 'Минск, Беларусь', color: 'text-orange-400' },
               { icon: Clock, label: 'Режим работы', value: 'Пн-Вс: 9:00 — 21:00', color: 'text-yellow-400' },
