@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 import {
   LogOut, User as UserIcon, Package, Clock, CheckCircle2, Truck,
   ShieldCheck, MapPin, ArrowRight, ArrowLeft, Copy, ChevronDown, ChevronUp,
-  Search, Gift, Coins, Tag, Sparkles,
+  Search, Gift, Coins, Tag, Sparkles, Mail, Phone as PhoneIcon, Lock, Eye, EyeOff,
+  LogIn, UserPlus, Zap, Globe, Star,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
