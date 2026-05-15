@@ -152,6 +152,7 @@ export type Database = {
           id: string
           name: string
           phone: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -160,6 +161,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -168,6 +170,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -230,15 +233,71 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_order_by_track: {
+        Args: { _track: string }
+        Returns: {
+          created_at: string
+          delivery_cost_byn: number
+          delivery_method: string
+          discount_applied: number
+          estimated_delivery: string | null
+          id: string
+          items: Json
+          payment_details: Json | null
+          payment_method: string
+          points_earned: number
+          profile_id: string | null
+          status: string
+          status_history: Json
+          total_price_byn: number
+          total_service_byn: number
+          total_weight: number
+          track_number: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_profile_owner: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -365,6 +424,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
