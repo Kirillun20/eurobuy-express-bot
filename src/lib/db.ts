@@ -119,13 +119,10 @@ export async function getOrdersByProfile(profileId: string): Promise<Order[]> {
 }
 
 export async function getOrderByTrackNumber(trackNumber: string): Promise<Order | null> {
-  const { data } = await supabase
-    .from('orders')
-    .select('*')
-    .ilike('track_number', trackNumber)
-    .single();
-  if (!data) return null;
-  return dbOrderToOrder(data);
+  // Use SECURITY DEFINER RPC so guests can look up orders by track number
+  const { data } = await (supabase as any).rpc('get_order_by_track', { _track: trackNumber });
+  if (!data || !data.length) return null;
+  return dbOrderToOrder(data[0]);
 }
 
 export async function updateOrderStatus(
