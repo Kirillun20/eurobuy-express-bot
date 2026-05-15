@@ -15,8 +15,10 @@ import {
   getDeliveryCost, getDeliveryLabel, getCodSurcharge, DEFAULT_BANKS, BankInfo,
 } from '@/lib/delivery-config';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import { createOrder, createProfile, getProfileByEmail, addEuroPointsDb, getBankRequisites } from '@/lib/db';
-import { saveUser, getUser } from '@/lib/store';
+import { createOrder, addEuroPointsDb, getBankRequisites } from '@/lib/db';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { saveUser } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -39,6 +41,7 @@ const emptyItem = () => ({
 
 const OrderPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { rates, loading: ratesLoading, convertToBYN, convertToEUR } = useExchangeRates();
   const [step, setStep] = useState<Step>('item');
   const [currentItem, setCurrentItem] = useState(emptyItem());
@@ -46,7 +49,7 @@ const OrderPage = () => {
   const [deliveryMethod, setDeliveryMethod] = useState('courier_minsk');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
-  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '' });
+  const [regForm, setRegForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
   const [selectedBank, setSelectedBank] = useState('');
   const [bankRegion, setBankRegion] = useState<'by' | 'ru'>('by');
@@ -60,7 +63,6 @@ const OrderPage = () => {
   }, []);
 
   const update = (key: string, value: string) => setCurrentItem(prev => ({ ...prev, [key]: value }));
-  const user = getUser();
 
   const priceNum = parseFloat(currentItem.price) || 0;
   const weightNum = parseFloat(currentItem.weight) || 0;
@@ -103,22 +105,43 @@ const OrderPage = () => {
   const grandTotal = roundBYN(totalPriceBYN + totalServiceBYN + deliveryCostBYN + boxCostBYN + codSurcharge);
 
   const handleRegister = async () => {
-    if (!regForm.name.trim() || !regForm.email.trim() || !regForm.phone.trim()) { toast.error('Заполните все поля'); return; }
+    if (!regForm.name.trim() || !regForm.email.trim() || !regForm.phone.trim() || !regForm.password) {
+      toast.error('Заполните все поля'); return;
+    }
+    if (regForm.password.length < 6) { toast.error('Пароль не менее 6 символов'); return; }
     setSubmitting(true);
     try {
-      let profile = await getProfileByEmail(regForm.email.trim());
-      if (!profile) profile = await createProfile({ name: regForm.name.trim(), email: regForm.email.trim(), phone: regForm.phone.trim() });
+      const { data, error } = await supabase.auth.signUp({
+        email: regForm.email.trim(),
+        password: regForm.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/profile`,
+          data: { name: regForm.name.trim(), phone: regForm.phone.trim() },
+        },
+      });
+      if (error) {
+        if (error.message.includes('already registered')) toast.error('Email уже зарегистрирован. Войдите в профиль и оформите заказ.');
+        else toast.error(error.message);
+        setSubmitting(false); return;
+      }
+      // Wait briefly for trigger-created profile, then fetch
+      await new Promise(r => setTimeout(r, 600));
+      const userId = data.user?.id;
+      if (!userId) { toast.error('Не удалось создать аккаунт'); setSubmitting(false); return; }
+      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle();
       if (profile) {
-        const localUser: User = { id: profile.id, name: profile.name, email: profile.email, phone: profile.phone, euroPoints: profile.euroPoints };
+        const localUser: User = { id: profile.id, name: profile.name, email: profile.email, phone: profile.phone || '', euroPoints: profile.euro_points || 0 };
         saveUser(localUser);
         toast.success('Регистрация успешна!');
         await finalizeOrder(localUser);
+      } else {
+        toast.error('Профиль не создан. Попробуйте ещё раз.');
       }
     } catch { toast.error('Ошибка регистрации'); }
     finally { setSubmitting(false); }
   };
 
-  const submit = () => { const u = getUser(); if (!u) { setStep('register'); return; } finalizeOrder(u); };
+  const submit = () => { if (!user) { setStep('register'); return; } finalizeOrder(user); };
 
   const buildPaymentDetails = (): PaymentDetails | undefined => {
     if (paymentMethod === 'transfer') {
@@ -150,7 +173,8 @@ const OrderPage = () => {
       if (created) {
         if (pointsEarned > 0) {
           await addEuroPointsDb(orderUser.id, pointsEarned);
-          const u = getUser(); if (u) { u.euroPoints = (u.euroPoints || 0) + pointsEarned; saveUser(u); }
+          const u = { ...orderUser, euroPoints: (orderUser.euroPoints || 0) + pointsEarned };
+          saveUser(u);
         }
         setCompletedOrder({ ...order, id: created.id }); setStep('done');
         toast.success('Заказ успешно оформлен!');

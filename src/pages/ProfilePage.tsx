@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getUser, saveUser, logout } from '@/lib/store';
-import { getProfileByEmail, createProfile, getOrdersByProfile, spendEuroPointsDb, getProfile } from '@/lib/db';
+import { saveUser, logout as clearCache } from '@/lib/store';
+import { getOrdersByProfile, spendEuroPointsDb, getProfile } from '@/lib/db';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Order, ORDER_STATUS_LABELS, ORDER_STATUS_DESCRIPTIONS, ALL_STATUSES, User,
   DELIVERY_METHODS, PAYMENT_METHODS, roundBYN, EUROPOINTS_REWARDS, EuroPointsReward,
@@ -36,7 +38,7 @@ type ProfileTab = 'orders' | 'points';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(getUser());
+  const { user, setUser, signOut, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
@@ -63,32 +65,47 @@ const ProfilePage = () => {
 
   const handleAuth = async () => {
     if (!form.email || !form.password) { toast.error('Заполните все поля'); return; }
+    if (form.password.length < 6) { toast.error('Пароль должен быть не менее 6 символов'); return; }
     if (!isLogin && !form.name) { toast.error('Укажите имя'); return; }
     if (!isLogin && !form.phone) { toast.error('Укажите телефон'); return; }
-    
+
     setLoading(true);
     try {
-      let profile = await getProfileByEmail(form.email);
       if (isLogin) {
-        if (!profile) { toast.error('Пользователь не найден'); setLoading(false); return; }
+        const { error } = await supabase.auth.signInWithPassword({
+          email: form.email.trim(),
+          password: form.password,
+        });
+        if (error) {
+          toast.error(error.message === 'Invalid login credentials' ? 'Неверный email или пароль' : error.message);
+        } else {
+          toast.success('Вход выполнен!');
+        }
       } else {
-        if (profile) { toast.error('Email уже зарегистрирован. Войдите.'); setLoading(false); return; }
-        profile = await createProfile({ name: form.name || form.email.split('@')[0], email: form.email, phone: form.phone });
+        const { error } = await supabase.auth.signUp({
+          email: form.email.trim(),
+          password: form.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/profile`,
+            data: { name: form.name.trim(), phone: form.phone.trim() },
+          },
+        });
+        if (error) {
+          if (error.message.includes('already registered')) toast.error('Email уже зарегистрирован. Войдите.');
+          else if (error.message.toLowerCase().includes('pwned') || error.message.toLowerCase().includes('compromised')) toast.error('Этот пароль был скомпрометирован. Выберите другой.');
+          else toast.error(error.message);
+        } else {
+          toast.success('Регистрация успешна!');
+        }
       }
-      if (profile) {
-        const localUser: User = { id: profile.id, name: profile.name, email: profile.email, phone: profile.phone, euroPoints: profile.euroPoints };
-        saveUser(localUser);
-        setUser(localUser);
-        toast.success(isLogin ? 'Вход выполнен!' : 'Регистрация успешна!');
-      }
-    } catch {
-      toast.error('Ошибка');
+    } catch (e: any) {
+      toast.error(e?.message || 'Ошибка');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => { logout(); setUser(null); setOrders([]); toast.info('Вы вышли из аккаунта'); };
+  const handleLogout = async () => { await signOut(); setOrders([]); toast.info('Вы вышли из аккаунта'); };
 
   const handleRedeemReward = async (reward: EuroPointsReward) => {
     if (!user) return;
