@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getUser, saveUser, logout } from '@/lib/store';
-import { getProfileByEmail, createProfile, getOrdersByProfile, spendEuroPointsDb, getProfile } from '@/lib/db';
+import { saveUser, logout as clearCache } from '@/lib/store';
+import { getOrdersByProfile, spendEuroPointsDb, getProfile } from '@/lib/db';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Order, ORDER_STATUS_LABELS, ORDER_STATUS_DESCRIPTIONS, ALL_STATUSES, User,
   DELIVERY_METHODS, PAYMENT_METHODS, roundBYN, EUROPOINTS_REWARDS, EuroPointsReward,
