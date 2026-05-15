@@ -19,12 +19,12 @@ export async function getProfile(profileId: string): Promise<User | null> {
   };
 }
 
-export async function getProfileByEmail(email: string): Promise<User | null> {
+export async function getProfileByUserId(userId: string): Promise<User | null> {
   const { data } = await supabase
     .from('profiles')
     .select('*')
-    .eq('email', email)
-    .single();
+    .eq('user_id', userId)
+    .maybeSingle();
   if (!data) return null;
   return {
     id: data.id,
@@ -35,14 +35,8 @@ export async function getProfileByEmail(email: string): Promise<User | null> {
   };
 }
 
-export async function createProfile(user: { name: string; email: string; phone: string }): Promise<User | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert({ name: user.name, email: user.email, phone: user.phone, euro_points: 0 })
-    .select()
-    .single();
-  if (error || !data) return null;
-  return { id: data.id, name: data.name, email: data.email, phone: data.phone || '', euroPoints: 0 };
+export async function updateProfileInfo(profileId: string, updates: { name?: string; phone?: string }): Promise<void> {
+  await supabase.from('profiles').update(updates).eq('id', profileId);
 }
 
 export async function updateProfilePoints(profileId: string, points: number): Promise<void> {
