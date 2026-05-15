@@ -14,8 +14,10 @@ import {
   getDeliveryCost, getDeliveryLabel, getCodSurcharge, DEFAULT_BANKS, BankInfo,
 } from '@/lib/delivery-config';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import { createOrder, createProfile, getProfileByEmail, addEuroPointsDb, getBankRequisites } from '@/lib/db';
-import { saveUser, getUser } from '@/lib/store';
+import { createOrder, addEuroPointsDb, getBankRequisites } from '@/lib/db';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { saveUser } from '@/lib/store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
