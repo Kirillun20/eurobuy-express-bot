@@ -76,7 +76,6 @@ function dbOrderToOrder(d: any): Order {
     profileId: d.profile_id || undefined,
     paymentDetails: d.payment_details || undefined,
     promoCode: d.promo_code || undefined,
-    discountApplied: Number(d.discount_applied) || 0,
   };
 }
 
