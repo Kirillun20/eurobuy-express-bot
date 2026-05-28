@@ -250,24 +250,30 @@ const AdminPage = () => {
   if (!authenticated) {
     return (
       <div className="px-4 py-6 pb-20 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[60vh]">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary"><Shield size={28} className="text-primary-foreground" /></div>
-            <h1 className="text-2xl font-display font-bold">Админ-панель</h1>
-            <p className="text-sm text-muted-foreground mt-1">Введите пароль для доступа</p>
-          </div>
-          <div className="space-y-4">
-            <div className="relative">
-              <Label className="text-xs mb-1.5 block text-muted-foreground">Пароль</Label>
-              <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} className="glass border-glow bg-transparent h-11 rounded-xl pr-10" />
-              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[34px] text-muted-foreground">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-            </div>
-            <Button onClick={handleLogin} className="w-full gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0"><Lock size={16} className="mr-2" /> Войти</Button>
-          </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full text-center">
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary"><Shield size={28} className="text-primary-foreground" /></div>
+          <h1 className="text-2xl font-display font-bold">Админ-панель</h1>
+          {authLoading ? (
+            <p className="text-sm text-muted-foreground mt-2">Проверка доступа...</p>
+          ) : !user ? (
+            <>
+              <p className="text-sm text-muted-foreground mt-2 mb-5">Войдите в аккаунт администратора</p>
+              <Button onClick={() => navigate('/profile')} className="gradient-primary glow-primary text-primary-foreground font-semibold h-11 rounded-xl border-0 px-6">
+                <Lock size={16} className="mr-2" /> Войти
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-destructive mt-2 mb-3">У вас нет прав администратора</p>
+              <p className="text-xs text-muted-foreground mb-5">Текущий пользователь: {user.email}</p>
+              <Button onClick={() => navigate('/')} variant="outline" className="glass border-glow h-11 rounded-xl px-6">На главную</Button>
+            </>
+          )}
         </motion.div>
       </div>
     );
   }
+
 
   const tabs: { id: Tab; label: string; icon: typeof Package }[] = [
     { id: 'stats', label: 'Статистика', icon: BarChart3 },
