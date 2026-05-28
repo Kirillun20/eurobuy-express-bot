@@ -4,7 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById, getAllChatSessions, getChatMessages, sendChatMessage, ChatMessage, getBankRequisites, updateSetting } from '@/lib/db';
+import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById, getAllChatSessions, getChatMessages, sendChatMessage, ChatMessage, getBankRequisites, updateSetting, getAllPromoCodes, createPromoCode, updatePromoCode, deletePromoCode } from '@/lib/db';
+import { useAuth } from '@/hooks/use-auth';
+import { PromoCode } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Order, Review, ORDER_STATUS_LABELS, ALL_STATUSES, OrderStatus,
@@ -17,25 +19,24 @@ import {
   Search, Trash2, ChevronDown, ChevronUp, TrendingUp, DollarSign,
   Clock, CheckCircle2, Truck, MapPin, ShieldCheck, ArrowLeft,
   MessageSquare, Filter, Edit3, Phone, Mail, MessageCircle, Send,
-  Settings, Save, Plus, CreditCard,
+  Settings, Save, Plus, CreditCard, Tag, X, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const ADMIN_PASSWORD = 'eurobuy2026';
+
 
 const STATUS_ICONS: Record<string, typeof Package> = {
   pending: Clock, confirmed: CheckCircle2, purchased: ShieldCheck,
   shipped: Truck, customs: MapPin, delivered: CheckCircle2,
 };
 
-type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat' | 'settings';
+type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat' | 'promo' | 'settings';
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  const authenticated = !!user && isAdmin;
   const [activeTab, setActiveTab] = useState<Tab>('stats');
   const [orders, setOrders] = useState<Order[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -57,6 +58,14 @@ const AdminPage = () => {
   const [editingBank, setEditingBank] = useState<{ region: 'by' | 'ru'; index: number } | null>(null);
   const [editBankForm, setEditBankForm] = useState({ id: '', name: '', card: '' });
   const [savingSettings, setSavingSettings] = useState(false);
+  // Promo state
+  const [promos, setPromos] = useState<PromoCode[]>([]);
+  const [newPromo, setNewPromo] = useState({
+    code: '', discountType: 'percent' as 'percent' | 'fixed', discountValue: '10',
+    appliesTo: 'total' as 'total' | 'service' | 'delivery',
+    minOrderByn: '0', maxDiscountByn: '', usageLimit: '', expiresAt: '', description: '',
+  });
+  const [creatingPromo, setCreatingPromo] = useState(false);
 
   useEffect(() => {
     if (authenticated) {
@@ -74,10 +83,51 @@ const AdminPage = () => {
     }
   }, [authenticated, activeTab]);
 
-  const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) { setAuthenticated(true); toast.success('Вход выполнен'); }
-    else toast.error('Неверный пароль');
+  // Load promos
+  useEffect(() => {
+    if (authenticated && activeTab === 'promo') {
+      getAllPromoCodes().then(setPromos);
+    }
+  }, [authenticated, activeTab]);
+
+  const refreshPromos = async () => setPromos(await getAllPromoCodes());
+
+  const handleCreatePromo = async () => {
+    if (!newPromo.code.trim()) { toast.error('Введите код'); return; }
+    const val = parseFloat(newPromo.discountValue);
+    if (!val || val <= 0) { toast.error('Укажите размер скидки'); return; }
+    setCreatingPromo(true);
+    const created = await createPromoCode({
+      code: newPromo.code.trim().toUpperCase(),
+      discountType: newPromo.discountType,
+      discountValue: val,
+      appliesTo: newPromo.appliesTo,
+      minOrderByn: parseFloat(newPromo.minOrderByn) || 0,
+      maxDiscountByn: newPromo.maxDiscountByn ? parseFloat(newPromo.maxDiscountByn) : null,
+      usageLimit: newPromo.usageLimit ? parseInt(newPromo.usageLimit) : null,
+      expiresAt: newPromo.expiresAt ? new Date(newPromo.expiresAt).toISOString() : null,
+      description: newPromo.description || null,
+      active: true,
+    });
+    setCreatingPromo(false);
+    if (created) {
+      toast.success('Промокод создан!');
+      setNewPromo({ code: '', discountType: 'percent', discountValue: '10', appliesTo: 'total', minOrderByn: '0', maxDiscountByn: '', usageLimit: '', expiresAt: '', description: '' });
+      await refreshPromos();
+    } else toast.error('Не удалось создать (возможно, код уже существует)');
   };
+
+  const togglePromo = async (p: PromoCode) => {
+    await updatePromoCode(p.id, { active: !p.active });
+    await refreshPromos();
+  };
+
+  const removePromo = async (id: string) => {
+    if (!confirm('Удалить промокод?')) return;
+    await deletePromoCode(id);
+    await refreshPromos();
+  };
+
 
   const updateOrderStatusHandler = async (orderId: string, newStatus: OrderStatus, comment?: string) => {
     const order = orders.find(o => o.id === orderId);
@@ -200,24 +250,30 @@ const AdminPage = () => {
   if (!authenticated) {
     return (
       <div className="px-4 py-6 pb-20 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[60vh]">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary"><Shield size={28} className="text-primary-foreground" /></div>
-            <h1 className="text-2xl font-display font-bold">Админ-панель</h1>
-            <p className="text-sm text-muted-foreground mt-1">Введите пароль для доступа</p>
-          </div>
-          <div className="space-y-4">
-            <div className="relative">
-              <Label className="text-xs mb-1.5 block text-muted-foreground">Пароль</Label>
-              <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} className="glass border-glow bg-transparent h-11 rounded-xl pr-10" />
-              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[34px] text-muted-foreground">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-            </div>
-            <Button onClick={handleLogin} className="w-full gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0"><Lock size={16} className="mr-2" /> Войти</Button>
-          </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full text-center">
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary"><Shield size={28} className="text-primary-foreground" /></div>
+          <h1 className="text-2xl font-display font-bold">Админ-панель</h1>
+          {authLoading ? (
+            <p className="text-sm text-muted-foreground mt-2">Проверка доступа...</p>
+          ) : !user ? (
+            <>
+              <p className="text-sm text-muted-foreground mt-2 mb-5">Войдите в аккаунт администратора</p>
+              <Button onClick={() => navigate('/profile')} className="gradient-primary glow-primary text-primary-foreground font-semibold h-11 rounded-xl border-0 px-6">
+                <Lock size={16} className="mr-2" /> Войти
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-destructive mt-2 mb-3">У вас нет прав администратора</p>
+              <p className="text-xs text-muted-foreground mb-5">Текущий пользователь: {user.email}</p>
+              <Button onClick={() => navigate('/')} variant="outline" className="glass border-glow h-11 rounded-xl px-6">На главную</Button>
+            </>
+          )}
         </motion.div>
       </div>
     );
   }
+
 
   const tabs: { id: Tab; label: string; icon: typeof Package }[] = [
     { id: 'stats', label: 'Статистика', icon: BarChart3 },
@@ -225,6 +281,7 @@ const AdminPage = () => {
     { id: 'reviews', label: 'Отзывы', icon: Star },
     { id: 'users', label: 'Клиенты', icon: Users },
     { id: 'chat', label: 'Чат', icon: MessageCircle },
+    { id: 'promo', label: 'Промокоды', icon: Tag },
     { id: 'settings', label: 'Настройки', icon: Settings },
   ];
 
@@ -532,6 +589,107 @@ const AdminPage = () => {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {/* PROMO */}
+          {activeTab === 'promo' && (
+            <div className="space-y-5">
+              {/* Create form */}
+              <div className="glass rounded-2xl p-4 border-glow space-y-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2"><Plus size={14} className="text-primary" /> Создать промокод</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="col-span-2">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Код</Label>
+                    <Input placeholder="SUMMER10" value={newPromo.code} onChange={e => setNewPromo(p => ({ ...p, code: e.target.value.toUpperCase() }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs uppercase font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Тип скидки</Label>
+                    <Select value={newPromo.discountType} onValueChange={(v: any) => setNewPromo(p => ({ ...p, discountType: v }))}>
+                      <SelectTrigger className="glass border-glow bg-transparent h-9 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent className="glass-strong rounded-xl">
+                        <SelectItem value="percent">Процент (%)</SelectItem>
+                        <SelectItem value="fixed">Фикс. (BYN)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Размер</Label>
+                    <Input type="number" placeholder="10" value={newPromo.discountValue} onChange={e => setNewPromo(p => ({ ...p, discountValue: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Применяется к</Label>
+                    <Select value={newPromo.appliesTo} onValueChange={(v: any) => setNewPromo(p => ({ ...p, appliesTo: v }))}>
+                      <SelectTrigger className="glass border-glow bg-transparent h-9 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent className="glass-strong rounded-xl">
+                        <SelectItem value="total">Всему заказу</SelectItem>
+                        <SelectItem value="service">Только сервисный сбор</SelectItem>
+                        <SelectItem value="delivery">Только доставке</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Мин. сумма (BYN)</Label>
+                    <Input type="number" placeholder="0" value={newPromo.minOrderByn} onChange={e => setNewPromo(p => ({ ...p, minOrderByn: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Макс. скидка (BYN)</Label>
+                    <Input type="number" placeholder="не огр." value={newPromo.maxDiscountByn} onChange={e => setNewPromo(p => ({ ...p, maxDiscountByn: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Лимит использований</Label>
+                    <Input type="number" placeholder="не огр." value={newPromo.usageLimit} onChange={e => setNewPromo(p => ({ ...p, usageLimit: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Действует до</Label>
+                    <Input type="date" value={newPromo.expiresAt} onChange={e => setNewPromo(p => ({ ...p, expiresAt: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Описание (необязательно)</Label>
+                    <Input placeholder="Летняя акция" value={newPromo.description} onChange={e => setNewPromo(p => ({ ...p, description: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                </div>
+                <Button onClick={handleCreatePromo} disabled={creatingPromo} className="w-full gradient-primary text-primary-foreground h-9 rounded-lg border-0 text-xs">
+                  <Plus size={12} className="mr-1" /> {creatingPromo ? 'Создание...' : 'Создать промокод'}
+                </Button>
+              </div>
+
+              {/* List */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">{promos.length} промокод(ов)</p>
+                {promos.map(p => (
+                  <div key={p.id} className={`glass rounded-xl p-3 border-glow ${!p.active ? 'opacity-50' : ''}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-mono font-bold text-sm text-gradient">{p.code}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                            {p.discountType === 'percent' ? `${p.discountValue}%` : `${p.discountValue} BYN`}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            {p.appliesTo === 'total' ? 'весь заказ' : p.appliesTo === 'service' ? 'сервис' : 'доставка'}
+                          </span>
+                          {!p.active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">выключен</span>}
+                        </div>
+                        {p.description && <p className="text-[10px] text-muted-foreground">{p.description}</p>}
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Исп.: {p.usedCount}{p.usageLimit ? `/${p.usageLimit}` : ''}
+                          {p.minOrderByn > 0 && ` · от ${p.minOrderByn} BYN`}
+                          {p.maxDiscountByn != null && ` · макс ${p.maxDiscountByn} BYN`}
+                          {p.expiresAt && ` · до ${new Date(p.expiresAt).toLocaleDateString('ru-RU')}`}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => togglePromo(p)} className="p-1.5 rounded-lg glass hover:border-glow" title={p.active ? 'Выключить' : 'Включить'}>
+                          {p.active ? <ToggleRight size={14} className="text-emerald-400" /> : <ToggleLeft size={14} className="text-muted-foreground" />}
+                        </button>
+                        <button onClick={() => removePromo(p.id)} className="p-1.5 rounded-lg hover:bg-destructive/10"><Trash2 size={12} className="text-destructive" /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {promos.length === 0 && <div className="text-center py-8 text-sm text-muted-foreground">Промокодов пока нет</div>}
+              </div>
             </div>
           )}
 

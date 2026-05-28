@@ -654,6 +654,7 @@ const AvitoOrderPage = () => {
               <div><Label className="text-xs mb-1.5 block text-muted-foreground">Ваше имя</Label><Input placeholder="Иван Иванов" value={regForm.name} onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))} className={inputClass} /></div>
               <div><Label className="text-xs mb-1.5 block text-muted-foreground">Телефон</Label><Input type="tel" placeholder="+375..." value={regForm.phone} onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))} className={inputClass} /></div>
               <div><Label className="text-xs mb-1.5 block text-muted-foreground">Email</Label><Input type="email" placeholder="email@example.com" value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))} className={inputClass} /></div>
+              <div><Label className="text-xs mb-1.5 block text-muted-foreground">Пароль (мин. 6 символов)</Label><Input type="password" placeholder="••••••••" value={regForm.password} onChange={e => setRegForm(f => ({ ...f, password: e.target.value }))} className={inputClass} /></div>
             </div>
           )}
         </motion.div>

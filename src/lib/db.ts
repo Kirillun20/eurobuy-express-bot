@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Order, OrderItem, User, Review, StatusUpdate } from './types';
+import { Order, OrderItem, User, Review, StatusUpdate, PromoCode } from './types';
 
 // =================== PROFILES ===================
 
@@ -75,7 +75,98 @@ function dbOrderToOrder(d: any): Order {
     discountApplied: Number(d.discount_applied) || 0,
     profileId: d.profile_id || undefined,
     paymentDetails: d.payment_details || undefined,
+    promoCode: d.promo_code || undefined,
   };
+}
+
+// =================== PROMO CODES ===================
+
+function dbPromo(p: any): PromoCode {
+  return {
+    id: p.id,
+    code: p.code,
+    discountType: p.discount_type,
+    discountValue: Number(p.discount_value),
+    appliesTo: p.applies_to,
+    minOrderByn: Number(p.min_order_byn),
+    maxDiscountByn: p.max_discount_byn != null ? Number(p.max_discount_byn) : null,
+    usageLimit: p.usage_limit,
+    usedCount: p.used_count,
+    active: p.active,
+    expiresAt: p.expires_at,
+    description: p.description,
+  };
+}
+
+export async function getAllPromoCodes(): Promise<PromoCode[]> {
+  const { data } = await supabase.from('promo_codes').select('*').order('created_at', { ascending: false });
+  return (data || []).map(dbPromo);
+}
+
+export async function validatePromoCode(code: string): Promise<PromoCode | null> {
+  const { data } = await supabase.from('promo_codes').select('*').eq('code', code.toUpperCase()).maybeSingle();
+  if (!data) return null;
+  const p = dbPromo(data);
+  if (!p.active) return null;
+  if (p.expiresAt && new Date(p.expiresAt) < new Date()) return null;
+  if (p.usageLimit != null && p.usedCount >= p.usageLimit) return null;
+  return p;
+}
+
+export async function consumePromoCode(code: string): Promise<boolean> {
+  const { data } = await (supabase as any).rpc('consume_promo_code', { _code: code.toUpperCase() });
+  return !!data;
+}
+
+export async function createPromoCode(input: Omit<PromoCode, 'id' | 'usedCount'>): Promise<PromoCode | null> {
+  const { data, error } = await supabase.from('promo_codes').insert({
+    code: input.code.toUpperCase(),
+    discount_type: input.discountType,
+    discount_value: input.discountValue,
+    applies_to: input.appliesTo,
+    min_order_byn: input.minOrderByn,
+    max_discount_byn: input.maxDiscountByn,
+    usage_limit: input.usageLimit,
+    active: input.active,
+    expires_at: input.expiresAt,
+    description: input.description,
+  }).select().single();
+  if (error || !data) return null;
+  return dbPromo(data);
+}
+
+export async function updatePromoCode(id: string, patch: Partial<PromoCode>): Promise<void> {
+  const dbPatch: any = {};
+  if (patch.code !== undefined) dbPatch.code = patch.code.toUpperCase();
+  if (patch.discountType !== undefined) dbPatch.discount_type = patch.discountType;
+  if (patch.discountValue !== undefined) dbPatch.discount_value = patch.discountValue;
+  if (patch.appliesTo !== undefined) dbPatch.applies_to = patch.appliesTo;
+  if (patch.minOrderByn !== undefined) dbPatch.min_order_byn = patch.minOrderByn;
+  if (patch.maxDiscountByn !== undefined) dbPatch.max_discount_byn = patch.maxDiscountByn;
+  if (patch.usageLimit !== undefined) dbPatch.usage_limit = patch.usageLimit;
+  if (patch.active !== undefined) dbPatch.active = patch.active;
+  if (patch.expiresAt !== undefined) dbPatch.expires_at = patch.expiresAt;
+  if (patch.description !== undefined) dbPatch.description = patch.description;
+  await supabase.from('promo_codes').update(dbPatch).eq('id', id);
+}
+
+export async function deletePromoCode(id: string): Promise<void> {
+  await supabase.from('promo_codes').delete().eq('id', id);
+}
+
+export function computePromoDiscount(
+  promo: PromoCode,
+  totals: { totalPriceBYN: number; totalServiceBYN: number; deliveryCostBYN: number }
+): number {
+  const grand = totals.totalPriceBYN + totals.totalServiceBYN + totals.deliveryCostBYN;
+  if (grand < promo.minOrderByn) return 0;
+  const base =
+    promo.appliesTo === 'service' ? totals.totalServiceBYN :
+    promo.appliesTo === 'delivery' ? totals.deliveryCostBYN :
+    grand;
+  let d = promo.discountType === 'percent' ? base * (promo.discountValue / 100) : promo.discountValue;
+  if (promo.maxDiscountByn != null) d = Math.min(d, promo.maxDiscountByn);
+  return Math.min(Math.max(d, 0), base);
 }
 
 export async function createOrder(order: Order, profileId?: string): Promise<Order | null> {
@@ -97,7 +188,8 @@ export async function createOrder(order: Order, profileId?: string): Promise<Ord
       points_earned: order.pointsEarned || 0,
       discount_applied: order.discountApplied || 0,
       payment_details: (order as any).paymentDetails || null,
-    })
+      promo_code: order.promoCode || null,
+    } as any)
     .select()
     .single();
   if (error || !data) return null;

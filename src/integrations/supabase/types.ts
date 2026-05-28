@@ -54,6 +54,7 @@ export type Database = {
           payment_method: string
           points_earned: number
           profile_id: string | null
+          promo_code: string | null
           status: string
           status_history: Json
           total_price_byn: number
@@ -73,6 +74,7 @@ export type Database = {
           payment_method?: string
           points_earned?: number
           profile_id?: string | null
+          promo_code?: string | null
           status?: string
           status_history?: Json
           total_price_byn?: number
@@ -92,6 +94,7 @@ export type Database = {
           payment_method?: string
           points_earned?: number
           profile_id?: string | null
+          promo_code?: string | null
           status?: string
           status_history?: Json
           total_price_byn?: number
@@ -171,6 +174,54 @@ export type Database = {
           name?: string
           phone?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          active: boolean
+          applies_to: string
+          code: string
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          max_discount_byn: number | null
+          min_order_byn: number
+          usage_limit: number | null
+          used_count: number
+        }
+        Insert: {
+          active?: boolean
+          applies_to?: string
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_discount_byn?: number | null
+          min_order_byn?: number
+          usage_limit?: number | null
+          used_count?: number
+        }
+        Update: {
+          active?: boolean
+          applies_to?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_discount_byn?: number | null
+          min_order_byn?: number
+          usage_limit?: number | null
+          used_count?: number
         }
         Relationships: []
       }
@@ -259,6 +310,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_promo_code: { Args: { _code: string }; Returns: boolean }
       get_order_by_track: {
         Args: { _track: string }
         Returns: {
@@ -273,6 +325,7 @@ export type Database = {
           payment_method: string
           points_earned: number
           profile_id: string | null
+          promo_code: string | null
           status: string
           status_history: Json
           total_price_byn: number

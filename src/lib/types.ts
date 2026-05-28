@@ -29,6 +29,22 @@ export interface Order {
   discountApplied?: number;
   profileId?: string;
   paymentDetails?: PaymentDetails;
+  promoCode?: string;
+}
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  appliesTo: 'total' | 'service' | 'delivery';
+  minOrderByn: number;
+  maxDiscountByn: number | null;
+  usageLimit: number | null;
+  usedCount: number;
+  active: boolean;
+  expiresAt: string | null;
+  description: string | null;
 }
 
 export interface PaymentDetails {
