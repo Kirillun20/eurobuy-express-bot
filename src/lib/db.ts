@@ -188,7 +188,8 @@ export async function createOrder(order: Order, profileId?: string): Promise<Ord
       points_earned: order.pointsEarned || 0,
       discount_applied: order.discountApplied || 0,
       payment_details: (order as any).paymentDetails || null,
-    })
+      promo_code: order.promoCode || null,
+    } as any)
     .select()
     .single();
   if (error || !data) return null;
