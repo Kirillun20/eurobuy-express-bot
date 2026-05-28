@@ -106,7 +106,21 @@ const OrderPage = () => {
   const selectedBoxInfo = PACKAGING_OPTIONS.flatMap(c => c.items).find(b => b.id === selectedBox);
   const boxCostBYN = deliveryMethod === 'europost' && selectedBoxInfo ? selectedBoxInfo.price : 0;
   const codSurcharge = paymentMethod === 'cod' ? getCodSurcharge(totalPriceBYN) : 0;
-  const grandTotal = roundBYN(totalPriceBYN + totalServiceBYN + deliveryCostBYN + boxCostBYN + codSurcharge);
+  const baseTotal = totalPriceBYN + totalServiceBYN + deliveryCostBYN + boxCostBYN;
+  const promoDiscount = promo ? computePromoDiscount(promo, { totalPriceBYN, totalServiceBYN, deliveryCostBYN: deliveryCostBYN + boxCostBYN }) : 0;
+  const grandTotal = roundBYN(Math.max(0, baseTotal + codSurcharge - promoDiscount));
+
+  const applyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setPromoChecking(true);
+    const p = await validatePromoCode(promoInput.trim());
+    setPromoChecking(false);
+    if (!p) { toast.error('Промокод не найден или истёк'); return; }
+    if (baseTotal < p.minOrderByn) { toast.error(`Минимальная сумма заказа ${p.minOrderByn} BYN`); return; }
+    setPromo(p);
+    toast.success(`Промокод применён: ${p.code}`);
+  };
+  const removePromo = () => { setPromo(null); setPromoInput(''); };
 
   const handleRegister = async () => {
     if (!regForm.name.trim() || !regForm.email.trim() || !regForm.phone.trim() || !regForm.password) {
