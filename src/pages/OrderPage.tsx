@@ -58,6 +58,9 @@ const OrderPage = () => {
   const [selectedBox, setSelectedBox] = useState('');
   const [expandedBoxCategory, setExpandedBoxCategory] = useState<string | null>(null);
   const [banks, setBanks] = useState<Record<'by' | 'ru', BankInfo[]>>(DEFAULT_BANKS);
+  const [promoInput, setPromoInput] = useState('');
+  const [promo, setPromo] = useState<PromoCode | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
 
   useEffect(() => {
     getBankRequisites().then(data => { if (data) setBanks(data); });
