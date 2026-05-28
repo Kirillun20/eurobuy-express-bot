@@ -4,7 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById, getAllChatSessions, getChatMessages, sendChatMessage, ChatMessage, getBankRequisites, updateSetting } from '@/lib/db';
+import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOrderStatus as dbUpdateStatus, updateOrderEstimate as dbUpdateEstimate, deleteOrderById, getAllChatSessions, getChatMessages, sendChatMessage, ChatMessage, getBankRequisites, updateSetting, getAllPromoCodes, createPromoCode, updatePromoCode, deletePromoCode } from '@/lib/db';
+import { useAuth } from '@/hooks/use-auth';
+import { PromoCode } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Order, Review, ORDER_STATUS_LABELS, ALL_STATUSES, OrderStatus,
