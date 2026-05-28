@@ -19,7 +19,7 @@ import {
   Search, Trash2, ChevronDown, ChevronUp, TrendingUp, DollarSign,
   Clock, CheckCircle2, Truck, MapPin, ShieldCheck, ArrowLeft,
   MessageSquare, Filter, Edit3, Phone, Mail, MessageCircle, Send,
-  Settings, Save, Plus, CreditCard,
+  Settings, Save, Plus, CreditCard, Tag, X, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
