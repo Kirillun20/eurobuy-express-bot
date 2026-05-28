@@ -24,7 +24,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const ADMIN_PASSWORD = 'eurobuy2026';
+
 
 const STATUS_ICONS: Record<string, typeof Package> = {
   pending: Clock, confirmed: CheckCircle2, purchased: ShieldCheck,
