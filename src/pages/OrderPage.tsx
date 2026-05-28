@@ -582,6 +582,40 @@ const OrderPage = () => {
                   </div>
                   {boxCostBYN > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Упаковка</span><span>{boxCostBYN.toFixed(2)} BYN</span></div>}
                   {codSurcharge > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Наложенный платёж (+1.5%)</span><span>{codSurcharge} BYN</span></div>}
+
+                  {/* Promo code */}
+                  <div className="pt-2">
+                    {promo ? (
+                      <div className="flex items-center justify-between glass rounded-lg p-2.5 border border-emerald-500/30">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Tag size={14} className="text-emerald-400 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-emerald-400 truncate">{promo.code}</p>
+                            <p className="text-[10px] text-muted-foreground">−{roundBYN(promoDiscount)} BYN</p>
+                          </div>
+                        </div>
+                        <button onClick={removePromo} className="p-1 rounded-md hover:bg-destructive/10"><X size={12} className="text-destructive" /></button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Tag size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                          <Input
+                            placeholder="Промокод"
+                            value={promoInput}
+                            onChange={e => setPromoInput(e.target.value.toUpperCase())}
+                            onKeyDown={e => e.key === 'Enter' && applyPromo()}
+                            className={`${inputClass} pl-9 h-10 uppercase`}
+                          />
+                        </div>
+                        <Button onClick={applyPromo} disabled={promoChecking || !promoInput.trim()}
+                          variant="outline" className="glass border-glow h-10 rounded-xl text-xs px-4">
+                          {promoChecking ? '...' : 'Применить'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="border-t border-border pt-3 flex justify-between items-center">
                     <span className="font-semibold">Итого</span>
                     <span className="text-xl font-display font-bold text-gradient">{grandTotal} BYN</span>
