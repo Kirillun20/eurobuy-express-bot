@@ -186,7 +186,9 @@ const OrderPage = () => {
         estimatedDelivery: new Date(Date.now() + 14 * 86400000).toISOString(),
         statusHistory: [{ status: 'pending', date: new Date().toISOString(), comment: 'Заказ создан' }],
         pointsEarned, profileId: orderUser.id, paymentDetails: buildPaymentDetails(),
+        promoCode: promo?.code, discountApplied: roundBYN(promoDiscount),
       };
+      if (promo) { await consumePromoCode(promo.code); }
       const created = await createOrder(order, orderUser.id);
       if (created) {
         if (pointsEarned > 0) {
