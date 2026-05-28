@@ -31,13 +31,12 @@ const STATUS_ICONS: Record<string, typeof Package> = {
   shipped: Truck, customs: MapPin, delivered: CheckCircle2,
 };
 
-type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat' | 'settings';
+type Tab = 'stats' | 'orders' | 'reviews' | 'users' | 'chat' | 'promo' | 'settings';
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  const authenticated = !!user && isAdmin;
   const [activeTab, setActiveTab] = useState<Tab>('stats');
   const [orders, setOrders] = useState<Order[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -59,6 +58,14 @@ const AdminPage = () => {
   const [editingBank, setEditingBank] = useState<{ region: 'by' | 'ru'; index: number } | null>(null);
   const [editBankForm, setEditBankForm] = useState({ id: '', name: '', card: '' });
   const [savingSettings, setSavingSettings] = useState(false);
+  // Promo state
+  const [promos, setPromos] = useState<PromoCode[]>([]);
+  const [newPromo, setNewPromo] = useState({
+    code: '', discountType: 'percent' as 'percent' | 'fixed', discountValue: '10',
+    appliesTo: 'total' as 'total' | 'service' | 'delivery',
+    minOrderByn: '0', maxDiscountByn: '', usageLimit: '', expiresAt: '', description: '',
+  });
+  const [creatingPromo, setCreatingPromo] = useState(false);
 
   useEffect(() => {
     if (authenticated) {
@@ -76,10 +83,51 @@ const AdminPage = () => {
     }
   }, [authenticated, activeTab]);
 
-  const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) { setAuthenticated(true); toast.success('Вход выполнен'); }
-    else toast.error('Неверный пароль');
+  // Load promos
+  useEffect(() => {
+    if (authenticated && activeTab === 'promo') {
+      getAllPromoCodes().then(setPromos);
+    }
+  }, [authenticated, activeTab]);
+
+  const refreshPromos = async () => setPromos(await getAllPromoCodes());
+
+  const handleCreatePromo = async () => {
+    if (!newPromo.code.trim()) { toast.error('Введите код'); return; }
+    const val = parseFloat(newPromo.discountValue);
+    if (!val || val <= 0) { toast.error('Укажите размер скидки'); return; }
+    setCreatingPromo(true);
+    const created = await createPromoCode({
+      code: newPromo.code.trim().toUpperCase(),
+      discountType: newPromo.discountType,
+      discountValue: val,
+      appliesTo: newPromo.appliesTo,
+      minOrderByn: parseFloat(newPromo.minOrderByn) || 0,
+      maxDiscountByn: newPromo.maxDiscountByn ? parseFloat(newPromo.maxDiscountByn) : null,
+      usageLimit: newPromo.usageLimit ? parseInt(newPromo.usageLimit) : null,
+      expiresAt: newPromo.expiresAt ? new Date(newPromo.expiresAt).toISOString() : null,
+      description: newPromo.description || null,
+      active: true,
+    });
+    setCreatingPromo(false);
+    if (created) {
+      toast.success('Промокод создан!');
+      setNewPromo({ code: '', discountType: 'percent', discountValue: '10', appliesTo: 'total', minOrderByn: '0', maxDiscountByn: '', usageLimit: '', expiresAt: '', description: '' });
+      await refreshPromos();
+    } else toast.error('Не удалось создать (возможно, код уже существует)');
   };
+
+  const togglePromo = async (p: PromoCode) => {
+    await updatePromoCode(p.id, { active: !p.active });
+    await refreshPromos();
+  };
+
+  const removePromo = async (id: string) => {
+    if (!confirm('Удалить промокод?')) return;
+    await deletePromoCode(id);
+    await refreshPromos();
+  };
+
 
   const updateOrderStatusHandler = async (orderId: string, newStatus: OrderStatus, comment?: string) => {
     const order = orders.find(o => o.id === orderId);
