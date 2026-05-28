@@ -592,6 +592,107 @@ const AdminPage = () => {
             </div>
           )}
 
+          {/* PROMO */}
+          {activeTab === 'promo' && (
+            <div className="space-y-5">
+              {/* Create form */}
+              <div className="glass rounded-2xl p-4 border-glow space-y-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2"><Plus size={14} className="text-primary" /> Создать промокод</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="col-span-2">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Код</Label>
+                    <Input placeholder="SUMMER10" value={newPromo.code} onChange={e => setNewPromo(p => ({ ...p, code: e.target.value.toUpperCase() }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs uppercase font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Тип скидки</Label>
+                    <Select value={newPromo.discountType} onValueChange={(v: any) => setNewPromo(p => ({ ...p, discountType: v }))}>
+                      <SelectTrigger className="glass border-glow bg-transparent h-9 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent className="glass-strong rounded-xl">
+                        <SelectItem value="percent">Процент (%)</SelectItem>
+                        <SelectItem value="fixed">Фикс. (BYN)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Размер</Label>
+                    <Input type="number" placeholder="10" value={newPromo.discountValue} onChange={e => setNewPromo(p => ({ ...p, discountValue: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Применяется к</Label>
+                    <Select value={newPromo.appliesTo} onValueChange={(v: any) => setNewPromo(p => ({ ...p, appliesTo: v }))}>
+                      <SelectTrigger className="glass border-glow bg-transparent h-9 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent className="glass-strong rounded-xl">
+                        <SelectItem value="total">Всему заказу</SelectItem>
+                        <SelectItem value="service">Только сервисный сбор</SelectItem>
+                        <SelectItem value="delivery">Только доставке</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Мин. сумма (BYN)</Label>
+                    <Input type="number" placeholder="0" value={newPromo.minOrderByn} onChange={e => setNewPromo(p => ({ ...p, minOrderByn: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Макс. скидка (BYN)</Label>
+                    <Input type="number" placeholder="не огр." value={newPromo.maxDiscountByn} onChange={e => setNewPromo(p => ({ ...p, maxDiscountByn: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Лимит использований</Label>
+                    <Input type="number" placeholder="не огр." value={newPromo.usageLimit} onChange={e => setNewPromo(p => ({ ...p, usageLimit: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Действует до</Label>
+                    <Input type="date" value={newPromo.expiresAt} onChange={e => setNewPromo(p => ({ ...p, expiresAt: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">Описание (необязательно)</Label>
+                    <Input placeholder="Летняя акция" value={newPromo.description} onChange={e => setNewPromo(p => ({ ...p, description: e.target.value }))} className="glass border-glow bg-transparent h-9 rounded-lg text-xs" />
+                  </div>
+                </div>
+                <Button onClick={handleCreatePromo} disabled={creatingPromo} className="w-full gradient-primary text-primary-foreground h-9 rounded-lg border-0 text-xs">
+                  <Plus size={12} className="mr-1" /> {creatingPromo ? 'Создание...' : 'Создать промокод'}
+                </Button>
+              </div>
+
+              {/* List */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">{promos.length} промокод(ов)</p>
+                {promos.map(p => (
+                  <div key={p.id} className={`glass rounded-xl p-3 border-glow ${!p.active ? 'opacity-50' : ''}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-mono font-bold text-sm text-gradient">{p.code}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                            {p.discountType === 'percent' ? `${p.discountValue}%` : `${p.discountValue} BYN`}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            {p.appliesTo === 'total' ? 'весь заказ' : p.appliesTo === 'service' ? 'сервис' : 'доставка'}
+                          </span>
+                          {!p.active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">выключен</span>}
+                        </div>
+                        {p.description && <p className="text-[10px] text-muted-foreground">{p.description}</p>}
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Исп.: {p.usedCount}{p.usageLimit ? `/${p.usageLimit}` : ''}
+                          {p.minOrderByn > 0 && ` · от ${p.minOrderByn} BYN`}
+                          {p.maxDiscountByn != null && ` · макс ${p.maxDiscountByn} BYN`}
+                          {p.expiresAt && ` · до ${new Date(p.expiresAt).toLocaleDateString('ru-RU')}`}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => togglePromo(p)} className="p-1.5 rounded-lg glass hover:border-glow" title={p.active ? 'Выключить' : 'Включить'}>
+                          {p.active ? <ToggleRight size={14} className="text-emerald-400" /> : <ToggleLeft size={14} className="text-muted-foreground" />}
+                        </button>
+                        <button onClick={() => removePromo(p.id)} className="p-1.5 rounded-lg hover:bg-destructive/10"><Trash2 size={12} className="text-destructive" /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {promos.length === 0 && <div className="text-center py-8 text-sm text-muted-foreground">Промокодов пока нет</div>}
+              </div>
+            </div>
+          )}
+
           {/* SETTINGS */}
           {activeTab === 'settings' && (
             <div className="space-y-6">
