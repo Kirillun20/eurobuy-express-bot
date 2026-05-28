@@ -26,7 +26,7 @@ import {
   ArrowLeft, ArrowRight, Check, Package, CreditCard,
   ShoppingBag, Wallet, Banknote, Plus, Trash2, AlertTriangle, Sparkles, Copy,
   FileText, RefreshCw, Info, Coins, User as UserIcon, Building2, Eye, EyeOff,
-  Star, Bitcoin, Send,
+  Star, Bitcoin, Send, Tag, Lock, X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
