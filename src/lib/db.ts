@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Order, OrderItem, User, Review, StatusUpdate } from './types';
+import { Order, OrderItem, User, Review, StatusUpdate, PromoCode } from './types';
 
 // =================== PROFILES ===================
 
