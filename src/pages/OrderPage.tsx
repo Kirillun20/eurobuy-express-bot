@@ -15,7 +15,8 @@ import {
   getDeliveryCost, getDeliveryLabel, getCodSurcharge, DEFAULT_BANKS, BankInfo,
 } from '@/lib/delivery-config';
 import { useExchangeRates } from '@/hooks/use-exchange-rates';
-import { createOrder, addEuroPointsDb, getBankRequisites } from '@/lib/db';
+import { createOrder, addEuroPointsDb, getBankRequisites, validatePromoCode, consumePromoCode, computePromoDiscount } from '@/lib/db';
+import { PromoCode } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { saveUser } from '@/lib/store';
