@@ -281,6 +281,7 @@ const AdminPage = () => {
     { id: 'reviews', label: 'Отзывы', icon: Star },
     { id: 'users', label: 'Клиенты', icon: Users },
     { id: 'chat', label: 'Чат', icon: MessageCircle },
+    { id: 'promo', label: 'Промокоды', icon: Tag },
     { id: 'settings', label: 'Настройки', icon: Settings },
   ];
 
