@@ -310,6 +310,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_points: {
+        Args: { _amount: number; _description: string; _profile_id: string }
+        Returns: undefined
+      }
       consume_promo_code: { Args: { _code: string }; Returns: boolean }
       get_order_by_track: {
         Args: { _track: string }
@@ -348,6 +352,22 @@ export type Database = {
         Returns: boolean
       }
       is_profile_owner: { Args: { _profile_id: string }; Returns: boolean }
+      validate_promo_code: {
+        Args: { _code: string }
+        Returns: {
+          active: boolean
+          applies_to: string
+          code: string
+          description: string
+          discount_type: string
+          discount_value: number
+          expires_at: string
+          id: string
+          min_order_byn: number
+          usage_limit: number
+          used_count: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
