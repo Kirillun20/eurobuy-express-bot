@@ -104,13 +104,9 @@ export async function getAllPromoCodes(): Promise<PromoCode[]> {
 }
 
 export async function validatePromoCode(code: string): Promise<PromoCode | null> {
-  const { data } = await supabase.from('promo_codes').select('*').eq('code', code.toUpperCase()).maybeSingle();
-  if (!data) return null;
-  const p = dbPromo(data);
-  if (!p.active) return null;
-  if (p.expiresAt && new Date(p.expiresAt) < new Date()) return null;
-  if (p.usageLimit != null && p.usedCount >= p.usageLimit) return null;
-  return p;
+  const { data, error } = await (supabase as any).rpc('validate_promo_code', { _code: code.toUpperCase() });
+  if (error || !data || !data.length) return null;
+  return dbPromo(data[0]);
 }
 
 export async function consumePromoCode(code: string): Promise<boolean> {
@@ -266,11 +262,11 @@ export async function deleteReviewById(reviewId: string): Promise<void> {
 // =================== POINTS ===================
 
 export async function addPointsTransaction(profileId: string, amount: number, type: 'earned' | 'spent', description: string): Promise<void> {
-  await supabase.from('points_transactions').insert({
-    profile_id: profileId,
-    amount,
-    type,
-    description,
+  await (supabase as any).rpc('record_user_points', {
+    _profile_id: profileId,
+    _amount: amount,
+    _type: type,
+    _description: description,
   });
 }
 
