@@ -8,6 +8,7 @@ import { getAllOrders, getAllReviews, deleteReviewById, getAllProfiles, updateOr
 import { useAuth } from '@/hooks/use-auth';
 import { PromoCode } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
+import AdminLogin from '@/components/AdminLogin';
 import {
   Order, Review, ORDER_STATUS_LABELS, ALL_STATUSES, OrderStatus,
   DELIVERY_METHODS, PAYMENT_METHODS, roundBYN, User, StatusUpdate,
