@@ -262,11 +262,11 @@ export async function deleteReviewById(reviewId: string): Promise<void> {
 // =================== POINTS ===================
 
 export async function addPointsTransaction(profileId: string, amount: number, type: 'earned' | 'spent', description: string): Promise<void> {
-  await supabase.from('points_transactions').insert({
-    profile_id: profileId,
-    amount,
-    type,
-    description,
+  await (supabase as any).rpc('record_user_points', {
+    _profile_id: profileId,
+    _amount: amount,
+    _type: type,
+    _description: description,
   });
 }
 
