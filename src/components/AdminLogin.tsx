@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Lock, Mail, Eye, EyeOff, LogOut } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,24 +16,38 @@ interface Props {
 
 export default function AdminLogin({ authLoading, user }: Props) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState(user?.email || '');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      toast.error('Введите email и пароль');
+    if (!password) {
+      toast.error('Введите пароль');
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
-    if (error) {
-      toast.error('Неверный email или пароль');
-      return;
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-login', {
+        body: { password },
+      });
+      if (error || !data?.access_token) {
+        toast.error('Неверный пароль');
+        return;
+      }
+      const { error: setErr } = await supabase.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+      });
+      if (setErr) {
+        toast.error('Не удалось установить сессию');
+        return;
+      }
+      toast.success('Добро пожаловать');
+    } catch {
+      toast.error('Ошибка входа');
+    } finally {
+      setLoading(false);
     }
-    toast.success('Вход выполнен');
   };
 
   const signOut = async () => {
@@ -53,18 +67,17 @@ export default function AdminLogin({ authLoading, user }: Props) {
             <Shield size={28} className="text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-display font-bold">Админ-панель</h1>
-          <p className="text-xs text-muted-foreground mt-1">Доступ только для администраторов</p>
+          <p className="text-xs text-muted-foreground mt-1">Введите пароль администратора</p>
         </div>
 
         {authLoading ? (
           <p className="text-center text-sm text-muted-foreground py-6">Проверка доступа...</p>
         ) : user ? (
           <div className="text-center space-y-4">
-            <p className="text-sm text-destructive">У этого аккаунта нет прав администратора</p>
-            <p className="text-xs text-muted-foreground break-all">{user.email}</p>
+            <p className="text-xs text-muted-foreground break-all">Вы вошли как {user.email}, но без прав админа</p>
             <div className="flex gap-2">
               <Button onClick={signOut} variant="outline" className="flex-1 glass h-11 rounded-xl">
-                <LogOut size={14} className="mr-2" /> Сменить аккаунт
+                <LogOut size={14} className="mr-2" /> Выйти
               </Button>
               <Button onClick={() => navigate('/')} variant="outline" className="flex-1 glass h-11 rounded-xl">
                 На главную
@@ -73,20 +86,6 @@ export default function AdminLogin({ authLoading, user }: Props) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Email</Label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9 h-11 glass border-glow rounded-xl"
-                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                />
-              </div>
-            </div>
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Пароль</Label>
               <div className="relative">
@@ -98,6 +97,7 @@ export default function AdminLogin({ authLoading, user }: Props) {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-9 pr-10 h-11 glass border-glow rounded-xl"
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  autoFocus
                 />
                 <button
                   type="button"
