@@ -352,6 +352,15 @@ export type Database = {
         Returns: boolean
       }
       is_profile_owner: { Args: { _profile_id: string }; Returns: boolean }
+      record_user_points: {
+        Args: {
+          _amount: number
+          _description: string
+          _profile_id: string
+          _type: string
+        }
+        Returns: undefined
+      }
       validate_promo_code: {
         Args: { _code: string }
         Returns: {
