@@ -92,7 +92,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   purchased: 'Выкуплен',
   shipped: 'Отправлен',
   customs: 'На таможне',
-  delivered: 'Доставлен',
+  delivered: 'Доставлен (готов к выдаче)',
 };
 
 export const ORDER_STATUS_DESCRIPTIONS: Record<OrderStatus, string> = {
