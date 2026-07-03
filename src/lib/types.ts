@@ -92,7 +92,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   purchased: 'Выкуплен',
   shipped: 'Отправлен',
   customs: 'На таможне',
-  delivered: 'Доставлен',
+  delivered: 'Доставлен (готов к выдаче)',
 };
 
 export const ORDER_STATUS_DESCRIPTIONS: Record<OrderStatus, string> = {
@@ -101,7 +101,7 @@ export const ORDER_STATUS_DESCRIPTIONS: Record<OrderStatus, string> = {
   purchased: 'Товар успешно выкуплен и готовится к отправке',
   shipped: 'Посылка отправлена и находится в пути к вам',
   customs: 'Посылка проходит таможенное оформление',
-  delivered: 'Заказ доставлен! Спасибо за покупку',
+  delivered: 'Заказ доставлен и готов к выдаче! Спасибо за покупку',
 };
 
 export const ALL_STATUSES: OrderStatus[] = ['pending', 'confirmed', 'purchased', 'shipped', 'customs', 'delivered'];
