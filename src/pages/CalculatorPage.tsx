@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 const CalculatorPage = () => {
   const { rates, loading: ratesLoading, updatedAt, refresh, convertToBYN, convertToEUR } = useExchangeRates();
   const [, forceTick] = useState(0);
+
   // Re-render every 15s so "обновлено N сек назад" stays accurate
   useEffect(() => {
     const id = setInterval(() => forceTick(t => t + 1), 15000);
@@ -30,9 +31,11 @@ const CalculatorPage = () => {
     const h = Math.floor(min / 60);
     return `${h} ч назад`;
   };
+
   const updatedTime = updatedAt
     ? new Date(updatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     : '—';
+
   const [weight, setWeight] = useState('');
   const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('EUR');
@@ -52,14 +55,12 @@ const CalculatorPage = () => {
 
   const calculate = () => {
     if (overWeight || overPrice) return;
-
     const weightCostUSD = getWeightPriceUSD(weightNum);
     const weightCostBYN = roundBYN(weightCostUSD * rates.USD);
     const percentCost = roundBYN(priceBYN * 0.22);
     const serviceCost = Math.max(percentCost, weightCostBYN);
     const deliveryCost = getDeliveryCost(delivery, weightNum);
     const total = roundBYN(priceBYN + serviceCost + deliveryCost);
-
     const isPercentHigher = percentCost >= weightCostBYN;
 
     setResult({
@@ -96,11 +97,13 @@ const CalculatorPage = () => {
         </div>
       )}
 
+      {/* НОВОЕ: rate-board вместо .glass border-glow — тонированная тил+золото
+          плашка вместо полупрозрачной, чтобы не "выбивалась" светлым пятном в тёмной теме */}
       {!ratesLoading && (
-        <div className="glass rounded-2xl p-3 mb-4 border-glow space-y-2">
+        <div className="rate-board rounded-2xl p-3 mb-4 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground/90">
-              <TrendingUp size={12} className="text-primary" />
+              <TrendingUp size={12} className="text-accent" />
               Актуальные курсы валют
             </div>
             <button
@@ -118,8 +121,8 @@ const CalculatorPage = () => {
               { code: 'EUR', val: rates.EUR },
               { code: 'PLN', val: rates.PLN },
             ].map(r => (
-              <div key={r.code} className="rounded-xl bg-primary/5 border border-primary/10 px-2 py-1.5 text-center">
-                <div className="text-[9px] text-muted-foreground uppercase tracking-wider">1 {r.code}</div>
+              <div key={r.code} className="rounded-xl rate-cell px-2 py-1.5 text-center">
+                <div className="text-[9px] text-accent/80 uppercase tracking-wider">1 {r.code}</div>
                 <div className="text-xs font-bold text-foreground">{roundBYN(r.val)} BYN</div>
               </div>
             ))}
