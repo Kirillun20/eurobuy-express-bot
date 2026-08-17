@@ -9,39 +9,28 @@
     /* ===== Dark theme (default) — deep teal-navy base, bright teal + soft gold accents ===== */
     --background: 203 35% 7%;
     --foreground: 156 15% 94%;
-
     --card: 204 27% 11%;
     --card-foreground: 156 15% 94%;
-
     --popover: 204 27% 11%;
     --popover-foreground: 156 15% 94%;
-
     --primary: 172 66% 50%;
     --primary-foreground: 203 35% 8%;
-
     --secondary: 203 22% 15%;
     --secondary-foreground: 156 10% 85%;
-
     --muted: 203 22% 15%;
     --muted-foreground: 185 6% 58%;
-
     --accent: 42 57% 68%;
     --accent-foreground: 203 35% 8%;
-
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 200 19% 18%;
     --input: 200 19% 18%;
     --ring: 172 66% 50%;
-
     --radius: 0.5rem;
-
     --glow-primary: 172 66% 50%;
     --glow-secondary: 42 57% 68%;
     --glow-accent: 172 66% 50%;
     --success: 152 55% 45%;
-
     --sidebar-background: 203 35% 7%;
     --sidebar-foreground: 156 15% 94%;
     --sidebar-primary: 172 66% 50%;
@@ -56,32 +45,23 @@
     /* ===== Light theme — soft warm off-white, deep teal + gold accents ===== */
     --background: 150 11% 96%;
     --foreground: 185 24% 11%;
-
     --card: 0 0% 100%;
     --card-foreground: 185 24% 11%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 185 24% 11%;
-
     --primary: 175 77% 26%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 150 10% 93%;
     --secondary-foreground: 185 15% 25%;
-
     --muted: 150 10% 93%;
     --muted-foreground: 167 6% 44%;
-
     --accent: 42 54% 54%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 146 12% 89%;
     --input: 146 12% 89%;
     --ring: 175 77% 26%;
-
     --glow-primary: 175 77% 26%;
     --glow-secondary: 42 54% 54%;
     --glow-accent: 175 77% 26%;
@@ -93,11 +73,9 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
-
   h1, h2, h3, h4 {
     font-family: 'Fraunces', serif;
     font-weight: 600;
@@ -142,6 +120,19 @@
   .shadow-glow {
     box-shadow: 0 4px 24px -6px hsl(var(--glow-primary) / 0.12);
   }
+
+  /* ===== NEW: тил + золото плашка для "табло" курсов валют (Калькулятор) =====
+     Спокойный тонированный фон вместо прозрачного .glass, который в тёмной
+     теме на некоторых экранах может казаться светлым/выбивающимся пятном. */
+  .rate-board {
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.14), hsl(var(--accent) / 0.10));
+    border: 1px solid hsl(var(--accent) / 0.25);
+  }
+  .rate-cell {
+    background: hsl(var(--card) / 0.5);
+    border: 1px solid hsl(var(--accent) / 0.18);
+  }
+
   .text-gradient {
     background: linear-gradient(135deg, hsl(var(--glow-primary)), hsl(var(--glow-secondary)));
     -webkit-background-clip: text;
@@ -189,35 +180,29 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
-
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
-
 @keyframes morph {
   0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
   25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
   50% { border-radius: 50% 60% 30% 60% / 30% 50% 70% 60%; }
   75% { border-radius: 60% 30% 60% 40% / 70% 50% 40% 60%; }
 }
-
 @keyframes orbit {
   from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
   to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
 }
-
 @keyframes shimmer {
   0% { opacity: 0.5; transform: translateX(-100%); }
   50% { opacity: 1; }
   100% { opacity: 0.5; transform: translateX(100%); }
 }
-
 @keyframes gradient-x {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
-
 @keyframes particle-float {
   0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
   10% { opacity: 1; }
