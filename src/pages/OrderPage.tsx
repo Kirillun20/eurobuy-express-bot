@@ -120,6 +120,7 @@ const OrderPage = () => {
     setPromo(p);
     toast.success(`Промокод применён: ${p.code}`);
   };
+
   const removePromo = () => { setPromo(null); setPromoInput(''); };
 
   const handleRegister = async () => {
@@ -142,7 +143,6 @@ const OrderPage = () => {
         else toast.error(error.message);
         setSubmitting(false); return;
       }
-      // Wait briefly for trigger-created profile, then fetch
       await new Promise(r => setTimeout(r, 600));
       const userId = data.user?.id;
       if (!userId) { toast.error('Не удалось создать аккаунт'); setSubmitting(false); return; }
@@ -213,41 +213,42 @@ const OrderPage = () => {
 
   const progressSteps = ['Товары', 'Доставка', 'Оплата'];
   const progressIdx = step === 'item' || step === 'confirm_more' ? 0 : step === 'delivery' ? 1 : 2;
-  const inputClass = "glass border-glow bg-transparent h-11 rounded-xl";
+  const inputClass = "bg-card border border-border h-11 rounded-xl";
   const selectedBankInfo = banks[bankRegion].find(b => b.id === selectedBank);
-
-  // Filter payment methods - COD only for europost
   const availablePayments = PAYMENT_METHODS_V2.filter(pm => !pm.europostOnly || deliveryMethod === 'europost');
 
   if (step === 'done' && completedOrder) {
     return (
       <div className="px-4 py-6 pb-20 max-w-lg mx-auto">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6 glow-primary">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+          <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6">
             <Sparkles size={36} className="text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-bold mb-2">Заказ оформлен!</h1>
+          <h1 className="text-2xl font-display font-semibold mb-2">Заказ оформлен!</h1>
           <p className="text-sm text-muted-foreground mb-6">Ваш трек-номер для отслеживания</p>
-          <div className="glass rounded-2xl p-6 border-glow shadow-glow mb-6">
+
+          <div className="bg-card border border-border rounded-2xl p-6 mb-6">
             <p className="text-xs text-muted-foreground mb-2">Трек-номер</p>
             <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl font-display font-bold text-gradient tracking-wider">{completedOrder.trackNumber}</span>
+              <span className="text-2xl font-display font-bold text-primary tracking-wider">{completedOrder.trackNumber}</span>
               <button onClick={() => { navigator.clipboard.writeText(completedOrder.trackNumber); toast.success('Скопирован!'); }}
-                className="p-2 rounded-lg glass hover:border-glow transition-all"><Copy size={16} className="text-muted-foreground" /></button>
+                className="p-2 rounded-lg bg-background border border-border"><Copy size={16} className="text-muted-foreground" /></button>
             </div>
           </div>
+
           {completedOrder.pointsEarned && completedOrder.pointsEarned > 0 && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-              className="glass rounded-2xl p-4 border-glow mb-6">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="bg-card border border-border rounded-2xl p-4 mb-6">
               <div className="flex items-center justify-center gap-2">
-                <Coins size={20} className="text-yellow-400" />
-                <span className="text-sm font-display font-bold text-yellow-400">+{completedOrder.pointsEarned} ЕвроБалл(ов)</span>
+                <Coins size={20} className="text-accent" />
+                <span className="text-sm font-display font-bold text-accent">+{completedOrder.pointsEarned} ЕвроБалл(ов)</span>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">Начислено на ваш счёт</p>
             </motion.div>
           )}
+
           {completedOrder.paymentDetails && (
-            <div className="glass rounded-2xl p-5 border-glow text-left mb-6">
+            <div className="bg-card border border-border rounded-2xl p-5 text-left mb-6">
               <h3 className="font-display font-bold text-sm mb-3 flex items-center gap-2">
                 <CreditCard size={16} className="text-primary" /> Данные для оплаты
               </h3>
@@ -257,7 +258,7 @@ const OrderPage = () => {
                   {completedOrder.paymentDetails.cardNumber && (
                     <div className="flex justify-between"><span className="text-muted-foreground">Карта</span><span className="font-mono font-medium">{completedOrder.paymentDetails.cardNumber}</span></div>
                   )}
-                  <div className="flex justify-between"><span className="text-muted-foreground">Сумма</span><span className="font-bold text-gradient">{grandTotal} BYN</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Сумма</span><span className="font-bold text-primary">{grandTotal} BYN</span></div>
                 </div>
               )}
               {completedOrder.paymentMethod === 'cash' && <p className="text-sm text-muted-foreground">Оплата наличными. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>}
@@ -266,11 +267,12 @@ const OrderPage = () => {
               {completedOrder.paymentMethod === 'crypto' && <p className="text-sm text-muted-foreground">Оплата криптовалютой. Менеджер свяжется для уточнения. Сумма: <span className="font-bold text-foreground">{grandTotal} BYN</span></p>}
             </div>
           )}
-          <div className="glass rounded-2xl p-5 border-glow text-left mb-6">
+
+          <div className="bg-card border border-border rounded-2xl p-5 text-left mb-6">
             <h3 className="font-display font-bold text-lg mb-3 flex items-center gap-2"><ShoppingBag size={18} className="text-primary" /> Сводка заказа</h3>
             <div className="space-y-2 mb-4">
               {completedOrder.items.map((item, idx) => (
-                <div key={idx} className="glass rounded-xl p-3">
+                <div key={idx} className="bg-background border border-border rounded-xl p-3">
                   <p className="text-sm font-medium truncate">{item.name || item.link}</p>
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>{item.quantity} шт · {item.weight} кг · {item.country}</span>
@@ -286,13 +288,14 @@ const OrderPage = () => {
               {codSurcharge > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Наложенный платёж</span><span>{codSurcharge} BYN</span></div>}
               <div className="border-t border-border pt-2 flex justify-between">
                 <span className="font-semibold">Итого</span>
-                <span className="text-lg font-display font-bold text-gradient">{grandTotal} BYN</span>
+                <span className="text-lg font-display font-bold text-primary">{grandTotal} BYN</span>
               </div>
             </div>
           </div>
+
           <div className="flex gap-3">
-            <Button onClick={() => navigate('/profile')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">Мои заказы</Button>
-            <Button variant="outline" onClick={() => navigate('/')} className="flex-1 glass border-glow h-12 rounded-xl">На главную</Button>
+            <Button onClick={() => navigate('/profile')} className="flex-1 gradient-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">Мои заказы</Button>
+            <Button variant="outline" onClick={() => navigate('/')} className="flex-1 bg-card border border-border h-12 rounded-xl">На главную</Button>
           </div>
         </motion.div>
       </div>
@@ -306,12 +309,13 @@ const OrderPage = () => {
           <RefreshCw size={12} className="animate-spin" /> Загрузка курсов валют...
         </div>
       )}
+
       {step !== 'register' && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
           {progressSteps.map((s, i) => (
             <div key={s} className="flex items-center">
               <div className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-500 ${i <= progressIdx ? 'gradient-primary text-primary-foreground glow-primary' : 'glass text-muted-foreground'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-500 ${i <= progressIdx ? 'gradient-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground'}`}>
                   {i < progressIdx ? <Check size={16} /> : i + 1}
                 </div>
                 <span className={`text-[10px] mt-1.5 font-medium ${i === progressIdx ? 'text-foreground' : 'text-muted-foreground'}`}>{s}</span>
@@ -323,12 +327,11 @@ const OrderPage = () => {
       )}
 
       <AnimatePresence mode="wait">
-        <motion.div key={step} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }} className="min-h-[320px]">
-
+        <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }} className="min-h-[320px]">
           {/* ITEM STEP */}
           {step === 'item' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-display font-bold">{items.length > 0 ? 'Добавить ещё товар' : 'Что хотите заказать?'}</h2>
+              <h2 className="text-2xl font-display font-semibold">{items.length > 0 ? 'Добавить ещё товар' : 'Что хотите заказать?'}</h2>
               <p className="text-sm text-muted-foreground">Вставьте ссылку или укажите название</p>
               <div>
                 <Label className="text-xs mb-1.5 block text-muted-foreground">Ссылка на товар</Label>
@@ -360,12 +363,12 @@ const OrderPage = () => {
                   <Label className="text-xs mb-1.5 block text-muted-foreground">Валюта</Label>
                   <Select value={currentItem.currency} onValueChange={v => update('currency', v)}>
                     <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-                    <SelectContent className="glass-strong rounded-xl">{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <SelectContent className="bg-card border border-border rounded-xl">{CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
               {priceNum > 0 && (
-                <div className="glass rounded-xl p-3 border-glow text-xs space-y-1">
+                <div className="bg-card border border-border rounded-xl p-3 text-xs space-y-1">
                   <div className="flex justify-between"><span className="text-muted-foreground">В BYN</span><span className="font-medium">{roundBYN(priceBYN)} BYN</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">В EUR</span><span className={`font-medium ${overPrice ? 'text-destructive' : ''}`}>{roundBYN(priceEUR)} EUR</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Сервис (примерно)</span><span className="font-medium">{roundBYN(serviceCostBYN)} BYN</span></div>
@@ -380,12 +383,12 @@ const OrderPage = () => {
                 <Label className="text-xs mb-1.5 block text-muted-foreground">Страна</Label>
                 <Select value={currentItem.country} onValueChange={v => update('country', v)}>
                   <SelectTrigger className={inputClass}><SelectValue placeholder="Выберите страну" /></SelectTrigger>
-                  <SelectContent className="glass-strong rounded-xl">{COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectContent className="bg-card border border-border rounded-xl">{COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs mb-1.5 block text-muted-foreground"><FileText size={10} className="inline mr-1" />Подробности <span className="text-muted-foreground/50">(необязательно)</span></Label>
-                <Textarea placeholder="Размер, цвет, артикул..." value={currentItem.notes} onChange={e => update('notes', e.target.value)} className="glass border-glow bg-transparent rounded-xl min-h-[70px] text-sm resize-none" rows={2} />
+                <Textarea placeholder="Размер, цвет, артикул..." value={currentItem.notes} onChange={e => update('notes', e.target.value)} className="bg-card border border-border rounded-xl min-h-[70px] text-sm resize-none" rows={2} />
               </div>
             </div>
           )}
@@ -393,10 +396,10 @@ const OrderPage = () => {
           {/* CONFIRM MORE */}
           {step === 'confirm_more' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-display font-bold">Ваши товары</h2>
+              <h2 className="text-2xl font-display font-semibold">Ваши товары</h2>
               <div className="space-y-3">
                 {items.map((item, idx) => (
-                  <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 border-glow">
+                  <motion.div key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{item.name || item.link}</p>
@@ -404,20 +407,20 @@ const OrderPage = () => {
                         <p className="text-[11px] text-muted-foreground">{item.country}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-display font-bold text-gradient">{item.priceBYN} BYN</span>
+                        <span className="text-sm font-display font-bold text-primary">{item.priceBYN} BYN</span>
                         <button onClick={() => removeItem(idx)} className="p-1.5 rounded-lg hover:bg-destructive/10"><Trash2 size={14} className="text-destructive" /></button>
                       </div>
                     </div>
                   </motion.div>
                 ))}
               </div>
-              <div className="glass rounded-2xl p-5 border-glow shadow-glow text-center">
+              <div className="bg-card border border-border rounded-2xl p-5 text-center">
                 <Sparkles size={24} className="text-primary mx-auto mb-3" />
                 <h3 className="font-display font-bold text-lg mb-1">Хотите добавить ещё?</h3>
                 <p className="text-xs text-muted-foreground mb-4">Несколько товаров в одной заявке</p>
                 <div className="flex gap-3">
-                  <Button onClick={() => setStep('item')} variant="outline" className="flex-1 glass border-glow h-11 rounded-xl"><Plus size={16} className="mr-1.5" /> Добавить</Button>
-                  <Button onClick={() => setStep('delivery')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-11 rounded-xl border-0">Далее <ArrowRight size={16} className="ml-1.5" /></Button>
+                  <Button onClick={() => setStep('item')} variant="outline" className="flex-1 bg-background border border-border h-11 rounded-xl"><Plus size={16} className="mr-1.5" /> Добавить</Button>
+                  <Button onClick={() => setStep('delivery')} className="flex-1 gradient-primary text-primary-foreground font-semibold h-11 rounded-xl border-0">Далее <ArrowRight size={16} className="ml-1.5" /></Button>
                 </div>
               </div>
             </div>
@@ -426,25 +429,24 @@ const OrderPage = () => {
           {/* DELIVERY */}
           {step === 'delivery' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-display font-bold">Способ доставки</h2>
+              <h2 className="text-2xl font-display font-semibold">Способ доставки</h2>
               <div className="space-y-3">
                 {DELIVERY_METHODS_V2.map(d => (
                   <button key={d.id} onClick={() => { setDeliveryMethod(d.id); if (d.id !== 'europost') { setSelectedBox(''); } }}
-                    className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300 ${deliveryMethod === d.id ? 'glass border-glow shadow-glow' : 'glass hover:border-glow'}`}>
+                    className={`w-full flex items-center justify-between p-4 rounded-xl transition-colors ${deliveryMethod === d.id ? 'bg-primary/8 border border-primary/30' : 'bg-card border border-border'}`}>
                     <div className="text-left">
                       <div className="font-medium text-sm">{d.name}</div>
                       <div className="text-[11px] text-muted-foreground">{d.desc}</div>
                     </div>
-                    <span className={`font-display font-bold text-sm ${deliveryMethod === d.id ? 'text-gradient' : 'text-muted-foreground'}`}>
+                    <span className={`font-display font-bold text-sm ${deliveryMethod === d.id ? 'text-primary' : 'text-muted-foreground'}`}>
                       {getDeliveryLabel(d.id, totalWeight)}
                     </span>
                   </button>
                 ))}
               </div>
 
-              {/* Europost weight tiers info */}
               {deliveryMethod === 'europost' && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 border-glow space-y-3">
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-4 space-y-3">
                   <h3 className="text-sm font-semibold flex items-center gap-2"><Info size={14} className="text-primary" /> Тарифы Европочты</h3>
                   <div className="grid grid-cols-2 gap-1.5 text-xs">
                     {[
@@ -456,24 +458,23 @@ const OrderPage = () => {
                       { range: '15.01 – 20 кг', price: '22 BYN' },
                       { range: '20.01 – 25 кг', price: '27.3 BYN' },
                     ].map(t => (
-                      <div key={t.range} className="flex justify-between glass rounded-lg p-2">
+                      <div key={t.range} className="flex justify-between bg-background border border-border rounded-lg p-2">
                         <span className="text-muted-foreground">{t.range}</span>
                         <span className="font-medium">{t.price}</span>
                       </div>
                     ))}
                   </div>
                   {totalWeight > 0 && (
-                    <div className="glass rounded-lg p-3 text-center border-glow">
+                    <div className="bg-background border border-border rounded-lg p-3 text-center">
                       <p className="text-xs text-muted-foreground">Ваш вес: {roundBYN(totalWeight)} кг</p>
-                      <p className="text-lg font-display font-bold text-gradient">{getDeliveryCost('europost', totalWeight)} BYN</p>
+                      <p className="text-lg font-display font-bold text-primary">{getDeliveryCost('europost', totalWeight)} BYN</p>
                     </div>
                   )}
                 </motion.div>
               )}
 
-              {/* CDEK individual notice */}
               {deliveryMethod === 'sdek' && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-xl p-4 border-glow">
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm">
                     <Info size={14} className="text-primary" />
                     <p className="text-muted-foreground">Стоимость доставки СДЭК рассчитывается индивидуально в зависимости от места доставки. Менеджер уточнит стоимость.</p>
@@ -481,12 +482,11 @@ const OrderPage = () => {
                 </motion.div>
               )}
 
-              {/* Packaging selector for Europost */}
               {deliveryMethod === 'europost' && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                   <h3 className="text-sm font-semibold flex items-center gap-2"><Package size={14} className="text-primary" /> Упаковка (необязательно)</h3>
                   {PACKAGING_OPTIONS.map(category => (
-                    <div key={category.name} className="glass rounded-xl overflow-hidden border-glow">
+                    <div key={category.name} className="bg-card border border-border rounded-xl overflow-hidden">
                       <button onClick={() => setExpandedBoxCategory(expandedBoxCategory === category.name ? null : category.name)}
                         className="w-full flex items-center justify-between p-3 text-left">
                         <div className="flex items-center gap-2">
@@ -504,13 +504,13 @@ const OrderPage = () => {
                             <div className="px-3 pb-3 space-y-1.5">
                               {category.items.map(box => (
                                 <button key={box.id} onClick={() => setSelectedBox(selectedBox === box.id ? '' : box.id)}
-                                  className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-all ${selectedBox === box.id ? 'glass border-glow shadow-glow' : 'hover:bg-muted/30'}`}>
+                                  className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-colors ${selectedBox === box.id ? 'bg-primary/8 border border-primary/30' : 'hover:bg-muted/30'}`}>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs font-medium truncate">{box.name}</p>
                                     <p className="text-[10px] text-muted-foreground">{box.size}</p>
                                   </div>
                                   <div className="flex items-center gap-2 ml-2">
-                                    <span className={`text-xs font-bold ${selectedBox === box.id ? 'text-gradient' : 'text-muted-foreground'}`}>{box.price.toFixed(2)} BYN</span>
+                                    <span className={`text-xs font-bold ${selectedBox === box.id ? 'text-primary' : 'text-muted-foreground'}`}>{box.price.toFixed(2)} BYN</span>
                                     {selectedBox === box.id && <Check size={14} className="text-primary" />}
                                   </div>
                                 </button>
@@ -522,13 +522,13 @@ const OrderPage = () => {
                     </div>
                   ))}
                   {selectedBoxInfo && (
-                    <div className="glass rounded-lg p-3 border-glow flex items-center justify-between">
+                    <div className="bg-card border border-border rounded-lg p-3 flex items-center justify-between">
                       <div>
                         <p className="text-xs font-medium">{selectedBoxInfo.name}</p>
                         <p className="text-[10px] text-muted-foreground">{selectedBoxInfo.size}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-gradient">{selectedBoxInfo.price.toFixed(2)} BYN</span>
+                        <span className="text-sm font-bold text-primary">{selectedBoxInfo.price.toFixed(2)} BYN</span>
                         <button onClick={() => setSelectedBox('')} className="p-1 rounded hover:bg-destructive/10"><Trash2 size={12} className="text-destructive" /></button>
                       </div>
                     </div>
@@ -541,13 +541,13 @@ const OrderPage = () => {
           {/* PAYMENT METHOD */}
           {step === 'payment' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-display font-bold">Способ оплаты</h2>
+              <h2 className="text-2xl font-display font-semibold">Способ оплаты</h2>
               <div className="space-y-3">
                 {availablePayments.map(pm => {
                   const PmIcon = PAYMENT_ICONS[pm.id] || Wallet;
                   return (
                     <button key={pm.id} onClick={() => setPaymentMethod(pm.id)}
-                      className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${paymentMethod === pm.id ? 'glass border-glow shadow-glow' : 'glass hover:border-glow'}`}>
+                      className={`w-full flex items-center gap-3 p-4 rounded-xl transition-colors ${paymentMethod === pm.id ? 'bg-primary/8 border border-primary/30' : 'bg-card border border-border'}`}>
                       <PmIcon size={20} className={paymentMethod === pm.id ? 'text-primary' : 'text-muted-foreground'} />
                       <div className="text-left flex-1">
                         <span className="font-medium text-sm">{pm.name}</span>
@@ -559,12 +559,11 @@ const OrderPage = () => {
                 })}
               </div>
 
-              {/* Summary */}
-              <div className="glass rounded-2xl p-5 border-glow shadow-glow mt-4">
+              <div className="bg-card border border-border rounded-2xl p-5 mt-4">
                 <h3 className="font-display font-bold text-lg mb-4 flex items-center gap-2"><ShoppingBag size={18} className="text-primary" /> Сводка</h3>
                 <div className="space-y-3 mb-4">
                   {items.map((item, idx) => (
-                    <div key={idx} className="glass rounded-xl p-3">
+                    <div key={idx} className="bg-background border border-border rounded-xl p-3">
                       <p className="text-sm font-medium truncate">{item.name || item.link}</p>
                       <div className="flex justify-between text-xs text-muted-foreground mt-1">
                         <span>{item.quantity} шт · {item.weight} кг · {item.country}</span>
@@ -583,14 +582,13 @@ const OrderPage = () => {
                   {boxCostBYN > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Упаковка</span><span>{boxCostBYN.toFixed(2)} BYN</span></div>}
                   {codSurcharge > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Наложенный платёж (+1.5%)</span><span>{codSurcharge} BYN</span></div>}
 
-                  {/* Promo code */}
                   <div className="pt-2">
                     {promo ? (
-                      <div className="flex items-center justify-between glass rounded-lg p-2.5 border border-emerald-500/30">
+                      <div className="flex items-center justify-between bg-background rounded-lg p-2.5 border border-primary/30">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Tag size={14} className="text-emerald-400 shrink-0" />
+                          <Tag size={14} className="text-primary shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold text-emerald-400 truncate">{promo.code}</p>
+                            <p className="text-xs font-semibold text-primary truncate">{promo.code}</p>
                             <p className="text-[10px] text-muted-foreground">−{roundBYN(promoDiscount)} BYN</p>
                           </div>
                         </div>
@@ -609,7 +607,7 @@ const OrderPage = () => {
                           />
                         </div>
                         <Button onClick={applyPromo} disabled={promoChecking || !promoInput.trim()}
-                          variant="outline" className="glass border-glow h-10 rounded-xl text-xs px-4">
+                          variant="outline" className="bg-card border border-border h-10 rounded-xl text-xs px-4">
                           {promoChecking ? '...' : 'Применить'}
                         </Button>
                       </div>
@@ -618,10 +616,10 @@ const OrderPage = () => {
 
                   <div className="border-t border-border pt-3 flex justify-between items-center">
                     <span className="font-semibold">Итого</span>
-                    <span className="text-xl font-display font-bold text-gradient">{grandTotal} BYN</span>
+                    <span className="text-xl font-display font-bold text-primary">{grandTotal} BYN</span>
                   </div>
                   {grandTotal >= 10 && (
-                    <p className="text-[10px] text-yellow-400 flex items-center gap-1"><Coins size={10} /> +{calculatePointsEarned(grandTotal)} ЕвроБалл(ов)</p>
+                    <p className="text-[10px] text-accent flex items-center gap-1"><Coins size={10} /> +{calculatePointsEarned(grandTotal)} ЕвроБалл(ов)</p>
                   )}
                 </div>
               </div>
@@ -631,7 +629,7 @@ const OrderPage = () => {
           {/* PAYMENT DETAILS */}
           {step === 'payment_details' && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-display font-bold">Детали оплаты</h2>
+              <h2 className="text-2xl font-display font-semibold">Детали оплаты</h2>
 
               {paymentMethod === 'transfer' && (
                 <div className="space-y-4">
@@ -640,7 +638,7 @@ const OrderPage = () => {
                     <div className="flex gap-2">
                       {([['by', '🇧🇾 Беларусь'], ['ru', '🇷🇺 Россия']] as const).map(([key, label]) => (
                         <button key={key} onClick={() => { setBankRegion(key); setSelectedBank(''); }}
-                          className={`flex-1 p-3 rounded-xl text-sm font-medium transition-all ${bankRegion === key ? 'glass border-glow shadow-glow' : 'glass hover:border-glow'}`}>
+                          className={`flex-1 p-3 rounded-xl text-sm font-medium transition-colors ${bankRegion === key ? 'bg-primary/8 border border-primary/30' : 'bg-card border border-border'}`}>
                           {label}
                         </button>
                       ))}
@@ -651,7 +649,7 @@ const OrderPage = () => {
                     <div className="space-y-2">
                       {banks[bankRegion].map(bank => (
                         <button key={bank.id} onClick={() => setSelectedBank(bank.id)}
-                          className={`w-full flex items-center gap-3 p-3.5 rounded-xl transition-all ${selectedBank === bank.id ? 'glass border-glow shadow-glow' : 'glass hover:border-glow'}`}>
+                          className={`w-full flex items-center gap-3 p-3.5 rounded-xl transition-colors ${selectedBank === bank.id ? 'bg-primary/8 border border-primary/30' : 'bg-card border border-border'}`}>
                           <Building2 size={18} className={selectedBank === bank.id ? 'text-primary' : 'text-muted-foreground'} />
                           <p className="text-sm font-medium flex-1 text-left">{bank.name}</p>
                           {selectedBank === bank.id && <Check size={16} className="text-primary" />}
@@ -660,23 +658,23 @@ const OrderPage = () => {
                     </div>
                   </div>
                   {selectedBankInfo && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-5 border-glow shadow-glow">
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-2xl p-5">
                       <h3 className="font-display font-bold text-sm mb-3 flex items-center gap-2">
                         <CreditCard size={16} className="text-primary" /> Реквизиты для перевода
                       </h3>
                       <div className="space-y-3">
-                        <div className="glass rounded-xl p-3">
+                        <div className="bg-background border border-border rounded-xl p-3">
                           <p className="text-[10px] text-muted-foreground mb-1">Номер карты</p>
                           <div className="flex items-center justify-between">
                             <span className="font-mono font-bold text-sm">{showCard ? selectedBankInfo.card : '•••• •••• •••• ' + selectedBankInfo.card.slice(-4)}</span>
                             <div className="flex gap-1.5">
-                              <button onClick={() => setShowCard(!showCard)} className="p-1.5 rounded-lg glass hover:border-glow">{showCard ? <EyeOff size={12} /> : <Eye size={12} />}</button>
+                              <button onClick={() => setShowCard(!showCard)} className="p-1.5 rounded-lg bg-card border border-border">{showCard ? <EyeOff size={12} /> : <Eye size={12} />}</button>
                               <button onClick={() => { navigator.clipboard.writeText(selectedBankInfo.card.replace(/\s/g, '')); toast.success('Скопирован!'); }}
-                                className="p-1.5 rounded-lg glass hover:border-glow"><Copy size={12} /></button>
+                                className="p-1.5 rounded-lg bg-card border border-border"><Copy size={12} /></button>
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Сумма</span><span className="font-display font-bold text-gradient">{grandTotal} BYN</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-muted-foreground">Сумма</span><span className="font-display font-bold text-primary">{grandTotal} BYN</span></div>
                       </div>
                     </motion.div>
                   )}
@@ -684,47 +682,47 @@ const OrderPage = () => {
               )}
 
               {paymentMethod === 'cash' && (
-                <div className="glass rounded-2xl p-5 border-glow shadow-glow">
+                <div className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3"><Wallet size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Оплата наличными</h3></div>
                   <p className="text-xs text-muted-foreground mb-3">Оплата при получении заказа. Подготовьте точную сумму.</p>
-                  <div className="glass rounded-xl p-4 border-glow text-center">
+                  <div className="bg-background border border-border rounded-xl p-4 text-center">
                     <p className="text-xs text-muted-foreground">Сумма к оплате</p>
-                    <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
+                    <p className="text-2xl font-display font-bold text-primary">{grandTotal} BYN</p>
                   </div>
                 </div>
               )}
 
               {paymentMethod === 'cod' && (
-                <div className="glass rounded-2xl p-5 border-glow shadow-glow">
+                <div className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3"><Package size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Наложенный платёж</h3></div>
                   <p className="text-xs text-muted-foreground mb-3">Оплата при получении через Европочту. К стоимости добавляется +1.5%.</p>
-                  <div className="glass rounded-xl p-4 border-glow text-center space-y-1">
+                  <div className="bg-background border border-border rounded-xl p-4 text-center space-y-1">
                     <p className="text-xs text-muted-foreground">Комиссия наложенного платежа</p>
                     <p className="text-sm font-medium">{codSurcharge} BYN</p>
                     <p className="text-xs text-muted-foreground">Итого к оплате</p>
-                    <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
+                    <p className="text-2xl font-display font-bold text-primary">{grandTotal} BYN</p>
                   </div>
                 </div>
               )}
 
               {paymentMethod === 'telegram_stars' && (
-                <div className="glass rounded-2xl p-5 border-glow shadow-glow">
+                <div className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3"><Star size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Звёзды Telegram</h3></div>
                   <p className="text-xs text-muted-foreground mb-3">Менеджер свяжется с вами для уточнения деталей оплаты звёздами Telegram.</p>
-                  <div className="glass rounded-xl p-4 border-glow text-center">
+                  <div className="bg-background border border-border rounded-xl p-4 text-center">
                     <p className="text-xs text-muted-foreground">Сумма к оплате</p>
-                    <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
+                    <p className="text-2xl font-display font-bold text-primary">{grandTotal} BYN</p>
                   </div>
                 </div>
               )}
 
               {paymentMethod === 'crypto' && (
-                <div className="glass rounded-2xl p-5 border-glow shadow-glow">
+                <div className="bg-card border border-border rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3"><Bitcoin size={18} className="text-primary" /><h3 className="font-display font-bold text-sm">Криптовалюта</h3></div>
                   <p className="text-xs text-muted-foreground mb-3">Менеджер свяжется с вами для уточнения адреса кошелька и криптовалюты для оплаты.</p>
-                  <div className="glass rounded-xl p-4 border-glow text-center">
+                  <div className="bg-background border border-border rounded-xl p-4 text-center">
                     <p className="text-xs text-muted-foreground">Сумма к оплате</p>
-                    <p className="text-2xl font-display font-bold text-gradient">{grandTotal} BYN</p>
+                    <p className="text-2xl font-display font-bold text-primary">{grandTotal} BYN</p>
                   </div>
                 </div>
               )}
@@ -735,10 +733,10 @@ const OrderPage = () => {
           {step === 'register' && (
             <div className="space-y-4">
               <div className="text-center mb-4">
-                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 glow-primary">
+                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
                   <UserIcon size={28} className="text-primary-foreground" />
                 </div>
-                <h2 className="text-2xl font-display font-bold">Почти готово!</h2>
+                <h2 className="text-2xl font-display font-semibold">Почти готово!</h2>
                 <p className="text-sm text-muted-foreground mt-1">Заполните данные для оформления</p>
               </div>
               <div><Label className="text-xs mb-1.5 block text-muted-foreground">Ваше имя</Label><Input placeholder="Иван Иванов" value={regForm.name} onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))} className={inputClass} /></div>
@@ -753,34 +751,34 @@ const OrderPage = () => {
 
       {/* Bottom buttons */}
       {step !== 'done' && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex gap-3 mt-6">
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="flex gap-3 mt-6">
           {step !== 'item' && (
-            <Button variant="outline" onClick={goBack} className="glass border-glow h-12 rounded-xl"><ArrowLeft size={16} /></Button>
+            <Button variant="outline" onClick={goBack} className="bg-card border border-border h-12 rounded-xl"><ArrowLeft size={16} /></Button>
           )}
           {step === 'item' && (
-            <Button disabled={!canAddItem()} onClick={addItem} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 disabled:opacity-40">
+            <Button disabled={!canAddItem()} onClick={addItem} className="flex-1 gradient-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 disabled:opacity-40">
               Добавить товар <ArrowRight size={16} className="ml-1.5" />
             </Button>
           )}
           {step === 'delivery' && (
-            <Button onClick={() => setStep('payment')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
+            <Button onClick={() => setStep('payment')} className="flex-1 gradient-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
               Далее <ArrowRight size={16} className="ml-1.5" />
             </Button>
           )}
           {step === 'payment' && (
-            <Button onClick={() => setStep('payment_details')} className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
+            <Button onClick={() => setStep('payment_details')} className="flex-1 gradient-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
               Далее <ArrowRight size={16} className="ml-1.5" />
             </Button>
           )}
           {step === 'payment_details' && (
             <Button onClick={submit} disabled={submitting || (paymentMethod === 'transfer' && !selectedBank)}
-              className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 disabled:opacity-40">
+              className="flex-1 gradient-primary text-primary-foreground font-semibold h-12 rounded-xl border-0 disabled:opacity-40">
               {submitting ? 'Оформляем...' : 'Оформить заказ'} <Check size={16} className="ml-1.5" />
             </Button>
           )}
           {step === 'register' && (
             <Button onClick={handleRegister} disabled={submitting}
-              className="flex-1 gradient-primary glow-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
+              className="flex-1 gradient-primary text-primary-foreground font-semibold h-12 rounded-xl border-0">
               {submitting ? 'Регистрация...' : 'Зарегистрироваться и оформить'} <Check size={16} className="ml-1.5" />
             </Button>
           )}
@@ -788,15 +786,15 @@ const OrderPage = () => {
       )}
 
       {/* Delivery CTA */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-        className="mt-8 glass rounded-2xl p-5 border-glow text-center">
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        className="mt-8 bg-card border border-border rounded-2xl p-5 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Package size={18} className="text-primary" />
           <h3 className="font-display font-bold text-sm">Товар уже куплен?</h3>
         </div>
         <p className="text-xs text-muted-foreground mb-3">Нужна только доставка? Напишите нам в Telegram</p>
         <a href="https://t.me/kirillmr" target="_blank" rel="noopener noreferrer">
-          <Button className="gradient-primary glow-primary text-primary-foreground font-semibold h-10 rounded-xl border-0 px-6">
+          <Button className="gradient-primary text-primary-foreground font-semibold h-10 rounded-xl border-0 px-6">
             <Send size={14} className="mr-2" /> Написать @kirillmr
           </Button>
         </a>
